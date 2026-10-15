@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WilGlobo Admin</title>
+<style>
+  :root{
+    --ink:#0f2540; --ink-soft:#51677f; --line:#dce3ec; --paper:#ffffff; --bg:#f3f6fb;
+    --blue:#1c5fd6; --blue-press:#154aab; --blue-wash:#eef3fc;
+    --green:#1e9e64; --green-wash:#e9f7ef; --amber:#b4710a; --amber-wash:#fdf3e4;
+    --red:#c0392b; --red-wash:#fbeceb; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,"Segoe UI",system-ui,Roboto,sans-serif; font-size:15px; line-height:1.45; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1140px; margin:0 auto; padding:24px 18px 64px;}
+  .brand{display:flex; align-items:baseline; gap:8px; margin-bottom:2px;}
+  .brand .mark{width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex:none; overflow:hidden;}
+  .brand .mark img{width:100%; height:100%; object-fit:cover; display:block;}
+  .brand h1{font-size:19px; margin:0; font-weight:700; letter-spacing:-0.01em;}
+  .brand .tag{color:var(--ink-soft); font-size:13px; font-weight:500;}
+  .sub{color:var(--ink-soft); font-size:14px; margin:6px 0 24px;}
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin-bottom:16px; box-shadow:0 1px 2px rgba(15,37,64,0.04);}
+  label{display:block; font-size:12.5px; color:var(--ink-soft); margin-bottom:6px; font-weight:500;}
+  input, select{width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:9px; font-size:14.5px; margin-bottom:12px; background:#fbfcfe; color:var(--ink);}
+  input:focus, select:focus{outline:none; border-color:var(--blue); background:#fff;}
+  button{padding:10px 16px; border:none; border-radius:9px; background:var(--blue); color:#fff; font-size:14px; font-weight:600; cursor:pointer;}
+  button:hover{background:var(--blue-press);}
+  button:disabled{opacity:.5; cursor:default;}
+  button.secondary{background:#fff; color:var(--blue); border:1.5px solid var(--line);}
+  button.secondary:hover{background:var(--blue-wash);}
+  button.danger{background:#fff; color:var(--red); border:1.5px solid var(--line);}
+  button.danger:hover{background:var(--red-wash); border-color:var(--red);}
+  button.small{padding:6px 11px; font-size:12.5px;}
+  .notice{font-size:13.5px; margin:10px 0; padding:10px 12px; border-radius:8px; display:none;}
+  .notice.show{display:block;}
+  .notice.info{background:var(--blue-wash); color:var(--ink-soft);}
+  .notice.err{background:var(--red-wash); color:var(--red);}
+  .notice.ok{background:var(--green-wash); color:var(--green);}
+  .topbar{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; gap:12px;}
+  .topbar h2{font-size:18px; margin:0 0 2px; font-weight:700;}
+  .topbar .who{color:var(--ink-soft); font-size:13.5px; margin:0;}
+  .signout{font-size:13px; color:var(--ink-soft); text-decoration:none; padding:6px 10px; border:1px solid var(--line); border-radius:8px; flex:none; white-space:nowrap;}
+  .signout:hover{border-color:var(--ink-soft); color:var(--ink);}
+  .screen{display:none;}
+  .screen.show{display:block;}
+  .loading{display:flex; align-items:center; gap:10px; color:var(--ink-soft); font-size:14px; padding:4px 0;}
+  .spinner{width:16px; height:16px; border-radius:50%; border:2px solid var(--line); border-top-color:var(--blue); animation:spin .7s linear infinite; flex:none;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .tiles{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:12px; margin-bottom:18px;}
+  .tile{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:16px; cursor:default;}
+  .tile .num{font-size:26px; font-weight:800; line-height:1.1;}
+  .tile .label{color:var(--ink-soft); font-size:12.5px; margin-top:4px; font-weight:500;}
+  .tile.warn{background:var(--amber-wash); border-color:#f0dcb4;}
+  .tile.warn .num{color:var(--amber);}
+  .tile.danger{background:var(--red-wash); border-color:#eccac6;}
+  .tile.danger .num{color:var(--red);}
+  .tile.ok{background:var(--green-wash); border-color:#c9e9d7;}
+  .tile.ok .num{color:var(--green);}
+
+  .status-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px;}
+  .status-chip{padding:7px 12px; border-radius:20px; background:var(--blue-wash); color:var(--blue); font-size:13px; font-weight:600;}
+
+  .section h3{font-size:15px; margin:0 0 10px; font-weight:700;}
+  .list{display:flex; flex-direction:column; gap:8px;}
+  .list-item{border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13.5px;}
+  .list-item .t{font-weight:700;}
+  .list-item .d{color:var(--ink-soft); margin-top:2px;}
+  .empty{color:var(--ink-soft); font-size:13.5px; padding:6px 0;}
+
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  th{text-align:left; color:var(--ink-soft); font-weight:600; font-size:12px; text-transform:none; padding:8px 8px; border-bottom:1.5px solid var(--line);}
+  td{padding:8px 8px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .row-actions{display:flex; gap:6px; flex-wrap:wrap;}
+  .pill{display:inline-block; padding:2px 8px; border-radius:20px; font-size:11.5px; font-weight:600; background:var(--blue-wash); color:var(--blue);}
+  .pill.off{background:#eef0f3; color:var(--ink-soft);}
+  .table-wrap{overflow-x:auto;}
+
+  .tabs{display:flex; gap:6px; margin-bottom:18px; overflow-x:auto; padding-bottom:2px;}
+  .tab{flex:none; padding:9px 15px; border-radius:20px; border:1.5px solid var(--line); background:#fff; color:var(--ink-soft); font-weight:600; font-size:13.5px; cursor:pointer;}
+  .tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+  .inline-form{display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:10px; align-items:end;}
+  .inline-form .checkbox-field{display:flex; align-items:center; gap:8px; padding-bottom:12px;}
+  .checkbox-field input{width:auto; margin:0;}
+  .foot{color:var(--ink-soft); font-size:12.5px; text-align:center; margin-top:28px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="login" class="screen show">
+    <div class="brand"><div class="mark"><img src="/assets/wilglobo-logo.png" alt="WilGlobo" width="28" height="28"></div><h1>WilGlobo</h1><span class="tag">Admin</span></div>
+    <p class="sub">Core-staff dashboard. Sign in the same way as the staff portal.</p>
+    <div class="card">
+      <label for="email">Work email</label>
+      <input id="email" type="email" placeholder="you@wilglobo.com" autocomplete="email">
+      <button id="sendLink" class="full" style="width:100%;">Send sign-in link</button>
+      <div id="loginMsg" class="notice"></div>
+    </div>
+  </div>
+
+  <div id="app" class="screen">
+    <div class="topbar">
+      <div>
+        <h2>Admin dashboard</h2>
+        <p class="who" id="whoami"></p>
+      </div>
+      <a href="/" class="signout" style="margin-right:6px;">Staff portal</a>
+      <a href="#" id="signOut" class="signout">Sign out</a>
+    </div>
+    <div id="loadingMe" class="loading"><span class="spinner"></span> Loading…</div>
+    <div id="deniedMsg" class="notice err"></div>
+
+    <div id="dashboard" style="display:none;">
+      <div class="tabs">
+        <button class="tab active" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="people">Staff &amp; workers</button>
+        <button class="tab" data-tab="resources">Resources</button>
+        <button class="tab" data-tab="invoices">Invoices</button>
+      </div>
+
+      <div id="tab-overview" class="screen show">
+        <div id="opsTiles" class="loading"><span class="spinner"></span> Loading ops status…</div>
+        <div id="opsDetails"></div>
+      </div>
+
+      <div id="tab-people" class="screen">
+        <div class="card">
+          <h3 style="margin-top:0;">Assign to a project</h3>
+          <div id="roleForm" class="inline-form">
+            <div><label>Person</label><select id="roleFormPerson"></select></div>
+            <div><label>Project</label><select id="roleFormProject"></select></div>
+            <div><label>Engagement track</label>
+              <select id="roleFormTrack">
+                <option value="staff">Staff</option>
+                <option value="independent_contractor">Independent contractor</option>
+                <option value="part_time">Part-time</option>
+                <option value="temporary">Temporary</option>
+                <option value="volunteer">Volunteer</option>
+              </select>
+            </div>
+            <div><label>Role title (optional)</label><input id="roleFormTitle" placeholder="e.g. Field tech"></div>
+            <div><button id="roleFormSubmit">Assign</button></div>
+          </div>
+          <div id="roleFormMsg" class="notice"></div>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0;">Everyone</h3>
+          <div id="peopleTable" class="loading"><span class="spinner"></span> Loading staff…</div>
+        </div>
+      </div>
+
+      <div id="tab-resources" class="screen">
+        <div class="card">
+          <h3 style="margin-top:0;">Add a resource</h3>
+          <div class="inline-form">
+            <div><label>Title</label><input id="resTitle" placeholder="e.g. Health and Safety Rules"></div>
+            <div><label>Category</label>
+              <select id="resCategory">
+                <option value="policy">Policy</option>
+                <option value="agreement">Agreement</option>
+                <option value="code_of_conduct">Code of conduct</option>
+                <option value="form">Form</option>
+                <option value="training">Training</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div><label>Project</label><select id="resProject"><option value="">All projects</option></select></div>
+            <div><label>URL</label><input id="resUrl" placeholder="https://…"></div>
+            <div class="checkbox-field"><input type="checkbox" id="resRequired"><label style="margin:0;">Required</label></div>
+            <div><button id="resAddSubmit">Add resource</button></div>
+          </div>
+          <div id="resFormMsg" class="notice"></div>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0;">All resources</h3>
+          <div id="resourcesTable" class="loading"><span class="spinner"></span> Loading resources…</div>
+        </div>
+      </div>
+
+      <div id="tab-invoices" class="screen">
+        <div class="card">
+          <h3 style="margin-top:0;">New invoice</h3>
+          <div class="inline-form">
+            <div><label>Client name</label><input id="invClientName" placeholder="e.g. Margaret Chen"></div>
+            <div><label>Client phone</label><input id="invClientPhone" placeholder="(403) 555-0100"></div>
+            <div><label>Client email</label><input id="invClientEmail" placeholder="client@example.com"></div>
+            <div><label>Client address (optional)</label><input id="invClientAddress" placeholder="Street, Calgary"></div>
+            <div><label>Contractor who did the work</label><select id="invContractor"></select></div>
+            <div><label>What was done (optional)</label><input id="invScope" placeholder="e.g. New laptop setup + email"></div>
+            <div class="checkbox-field"><input type="checkbox" id="invSmsConsent"><label style="margin:0;">Client agreed to receive texts</label></div>
+          </div>
+
+          <label style="margin-top:4px;">Line items</label>
+          <div class="inline-form" style="margin-bottom:6px;">
+            <div><select id="invServiceItem"></select></div>
+            <div><input id="invServiceQty" type="number" min="0.25" step="0.25" value="1" placeholder="Qty"></div>
+            <div><button type="button" id="invAddLineItem" class="secondary">Add item</button></div>
+          </div>
+          <div id="invLineItemsList" class="list" style="margin-bottom:10px;"></div>
+          <p id="invRunningTotal" class="empty"></p>
+
+          <button id="invCreateSubmit">Create invoice</button>
+          <div id="invCreateMsg" class="notice"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">All invoices</h3>
+          <div id="invoicesTable" class="loading"><span class="spinner"></span> Loading invoices…</div>
+          <div id="invoiceDetail"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">WilGlobo Admin · core staff only</p>
+</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  const SUPABASE_URL = "https://gyfuaynrqpfpdexbwyxs.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5ZnVheW5ycXBmcGRleGJ3eXhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNDM1MDMsImV4cCI6MjA5OTkxOTUwM30.OpZgDkNPZu-KC3RQ8erZF6j7cvA-Gb3eUg-3zao0U4c";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const loginEl = document.getElementById("login");
+  const appEl = document.getElementById("app");
+  const loginMsg = document.getElementById("loginMsg");
+  const whoami = document.getElementById("whoami");
+  const loadingMe = document.getElementById("loadingMe");
+  const deniedMsg = document.getElementById("deniedMsg");
+  const dashboard = document.getElementById("dashboard");
+
+  let currentToken = null;
+  let projectsCache = [];
+  let peopleCache = [];
+
+  function setNotice(el, text, kind){ el.textContent = text; el.className = "notice show" + (kind ? " " + kind : ""); }
+  function escapeHtml(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function show(el){ el.classList.add("show"); }
+  function hide(el){ el.classList.remove("show"); }
+
+  document.getElementById("sendLink").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const email = document.getElementById("email").value.trim();
+    if (!email) { setNotice(loginMsg, "Enter your email first.", "err"); return; }
+    btn.disabled = true;
+    setNotice(loginMsg, "Sending…", "info");
+    try {
+      const res = await fetch("/api/request-signin-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, redirectTo: window.location.href }),
+      });
+      const data = await res.json().catch(() => ({}));
+      btn.disabled = false;
+      setNotice(loginMsg, data.message || "If that email is on file with WilGlobo, a sign-in link is on its way.", res.ok ? "ok" : "err");
+    } catch (e) {
+      btn.disabled = false;
+      setNotice(loginMsg, "Could not reach the server. Check your connection and try again.", "err");
+    }
+  });
+
+  document.getElementById("signOut").addEventListener("click", async (e) => {
+    e.preventDefault();
+    await sb.auth.signOut();
+    location.reload();
+  });
+
+  async function authedFetch(url, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({}, opts.headers, { Authorization: "Bearer " + currentToken });
+    return fetch(url, opts);
+  }
+
+  async function showApp(session) {
+    hide(loginEl);
+    show(appEl);
+    currentToken = session.access_token;
+    whoami.textContent = session.user.email;
+    await loadMe();
+  }
+
+  async function loadMe() {
+    loadingMe.style.display = "flex";
+    try {
+      const res = await authedFetch("/api/me");
+      const data = await res.json();
+      loadingMe.style.display = "none";
+      if (!res.ok) { setNotice(deniedMsg, data.error || "Could not load your account.", "err"); return; }
+      if (!data.isCoreStaff) {
+        setNotice(deniedMsg, "This dashboard is for core staff only. If that's wrong, contact WilGlobo support to flag your account.", "err");
+        return;
+      }
+      dashboard.style.display = "block";
+      initTabs();
+      loadOverview();
+      loadPeople();
+      loadResources();
+      loadInvoicesMeta();
+      loadInvoices();
+    } catch (e) {
+      loadingMe.style.display = "none";
+      setNotice(deniedMsg, "Could not reach the server. Check your connection and refresh.", "err");
+    }
+  }
+
+  function initTabs() {
+    const tabs = document.querySelectorAll(".tab");
+    tabs.forEach((b) => b.addEventListener("click", () => {
+      tabs.forEach((x) => x.classList.toggle("active", x === b));
+      ["overview", "people", "resources", "invoices"].forEach((k) => {
+        const el = document.getElementById("tab-" + k);
+        if (k === b.dataset.tab) show(el); else hide(el);
+      });
+    }));
+  }
+
+  // ---------- Overview ----------
+  async function loadOverview() {
+    const tilesEl = document.getElementById("opsTiles");
+    const detailsEl = document.getElementById("opsDetails");
+    try {
+      const res = await authedFetch("/api/admin/ops-summary");
+      const data = await res.json();
+      if (!res.ok) {
+        tilesEl.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load ops status.") + "</p>";
+        return;
+      }
+      const byStatus = data.jobsByStatus || {};
+      const totalJobs = Object.values(byStatus).reduce((a, b) => a + b, 0);
+      const blocked = (byStatus["Issues/Blocked"] || 0);
+
+      tilesEl.innerHTML = "";
+      tilesEl.className = "tiles";
+      const tiles = [
+        [totalJobs, "Total jobs tracked", ""],
+        [data.openForClaim || 0, "Open shifts to claim", "ok"],
+        [data.needsAttention ? data.needsAttention.length : 0, "Jobs needing attention", (data.needsAttention||[]).length ? "danger" : "ok"],
+        [data.workersNotReady ? data.workersNotReady.length : 0, "Workers not ready", (data.workersNotReady||[]).length ? "warn" : "ok"],
+        [data.expiringSoon ? data.expiringSoon.length : 0, "Insurance/WCB expiring (30d)", (data.expiringSoon||[]).length ? "warn" : "ok"],
+        [data.clientsUnsigned ? data.clientsUnsigned.length : 0, "Clients with unsigned forms", (data.clientsUnsigned||[]).length ? "warn" : "ok"],
+        ["$" + (data.moneyOwed || 0).toFixed(0), "Invoiced, not yet paid", ""],
+        [data.signaturesThisWeek || 0, "Signatures this week", "ok"],
+      ];
+      tiles.forEach(([num, label, kind]) => {
+        const d = document.createElement("div");
+        d.className = "tile" + (kind ? " " + kind : "");
+        d.innerHTML = '<div class="num">' + escapeHtml(num) + '</div><div class="label">' + escapeHtml(label) + "</div>";
+        tilesEl.appendChild(d);
+      });
+
+      const statusRow = document.createElement("div");
+      statusRow.className = "status-row";
+      Object.entries(byStatus).forEach(([status, count]) => {
+        const chip = document.createElement("span");
+        chip.className = "status-chip";
+        chip.textContent = status + ": " + count;
+        statusRow.appendChild(chip);
+      });
+
+      function listSection(title, items, render) {
+        const sec = document.createElement("div");
+        sec.className = "card section";
+        const h = document.createElement("h3");
+        h.textContent = title;
+        sec.appendChild(h);
+        const list = document.createElement("div");
+        list.className = "list";
+        if (!items || items.length === 0) {
+          list.innerHTML = '<p class="empty">Nothing here right now.</p>';
+        } else {
+          items.forEach((item) => {
+            const row = document.createElement("div");
+            row.className = "list-item";
+            row.innerHTML = render(item);
+            list.appendChild(row);
+          });
+        }
+        sec.appendChild(list);
+        return sec;
+      }
+
+      detailsEl.innerHTML = "";
+      detailsEl.appendChild((() => { const c = document.createElement("div"); c.className = "card"; c.appendChild(statusRow); const h = document.createElement("h3"); h.textContent = "Jobs by status"; h.style.marginTop = "0"; c.insertBefore(h, statusRow); return c; })());
+      detailsEl.appendChild(listSection("Needs attention", data.needsAttention, (i) => '<div class="t">' + escapeHtml(i.job) + "</div><div class=\"d\">" + escapeHtml(i.reason) + (i.client ? " · " + escapeHtml(i.client) : "") + "</div>"));
+      detailsEl.appendChild(listSection("Workers not ready", data.workersNotReady, (i) => '<div class="t">' + escapeHtml(i.name) + "</div><div class=\"d\">" + escapeHtml(i.gaps) + "</div>"));
+      detailsEl.appendChild(listSection("Insurance / WCB expiring within 30 days", data.expiringSoon, (i) => '<div class="t">' + escapeHtml(i.name) + "</div><div class=\"d\">" + escapeHtml(i.what) + " expires " + escapeHtml(i.expires) + "</div>"));
+      detailsEl.appendChild(listSection("Clients with unsigned forms", data.clientsUnsigned, (i) => '<div class="t">' + escapeHtml(i.name) + "</div><div class=\"d\">" + escapeHtml(i.gaps) + "</div>"));
+      loadAuditLog(detailsEl);
+    } catch (e) {
+      tilesEl.innerHTML = '<p class="notice show err">Could not reach the server.</p>';
+    }
+  }
+
+  async function loadAuditLog(detailsEl) {
+    try {
+      const res = await authedFetch("/api/admin/audit-log?limit=25");
+      const data = await res.json();
+      if (!res.ok) return;
+      const sec = document.createElement("div");
+      sec.className = "card section";
+      const h = document.createElement("h3");
+      h.textContent = "Recent admin activity";
+      sec.appendChild(h);
+      const list = document.createElement("div");
+      list.className = "list";
+      const entries = data.entries || [];
+      if (entries.length === 0) {
+        list.innerHTML = '<p class="empty">No admin changes logged yet.</p>';
+      } else {
+        entries.forEach((e) => {
+          const row = document.createElement("div");
+          row.className = "list-item";
+          const who = e.actor_name || e.actor_email || "Unknown";
+          const when = new Date(e.created_at).toLocaleString();
+          row.innerHTML = '<div class="t">' + escapeHtml(who) + " — " + escapeHtml(e.action) + '</div><div class="d">' + escapeHtml(when) + (e.entity_id ? " · " + escapeHtml(e.entity_type) + " " + escapeHtml(e.entity_id) : "") + "</div>";
+          list.appendChild(row);
+        });
+      }
+      sec.appendChild(list);
+      detailsEl.appendChild(sec);
+    } catch (e) {
+      // Non-critical — ops tiles already loaded, just skip the audit panel.
+    }
+  }
+
+  // ---------- People ----------
+  async function loadPeople() {
+    const el = document.getElementById("peopleTable");
+    try {
+      const [peopleRes, projectsRes] = await Promise.all([
+        authedFetch("/api/admin/people"),
+        authedFetch("/api/admin/projects"),
+      ]);
+      const peopleData = await peopleRes.json();
+      const projectsData = await projectsRes.json();
+      if (!peopleRes.ok) { el.innerHTML = '<p class="notice show err">' + escapeHtml(peopleData.error || "Could not load staff.") + "</p>"; return; }
+      peopleCache = peopleData.people || [];
+      projectsCache = (projectsRes.ok && projectsData.projects) || [];
+
+      fillSelect("roleFormPerson", peopleCache.map(p => [p.id, p.full_name + " (" + p.email + ")"]));
+      fillSelect("roleFormProject", projectsCache.map(p => [p.id, p.name]));
+      fillSelect("resProject", [["", "All projects"]].concat(projectsCache.map(p => [p.id, p.name])));
+
+      renderPeopleTable();
+    } catch (e) {
+      el.innerHTML = '<p class="notice show err">Could not reach the server.</p>';
+    }
+  }
+
+  function fillSelect(id, pairs) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = "";
+    pairs.forEach(([value, label]) => {
+      const o = document.createElement("option");
+      o.value = value; o.textContent = label;
+      sel.appendChild(o);
+    });
+  }
+
+  function renderPeopleTable() {
+    const el = document.getElementById("peopleTable");
+    if (peopleCache.length === 0) { el.innerHTML = '<p class="empty">No one in staff.people yet.</p>'; return; }
+    let html = '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Projects</th><th>Core staff</th><th>Active</th><th>Signed in</th></tr></thead><tbody>';
+    peopleCache.forEach((p) => {
+      const roles = (p.roles || []).map(r => escapeHtml(r.project_name) + (r.role_title ? " (" + escapeHtml(r.role_title) + ")" : "")).join(", ") || '<span class="empty">none</span>';
+      html += "<tr>" +
+        "<td>" + escapeHtml(p.full_name) + "</td>" +
+        "<td>" + escapeHtml(p.email) + "</td>" +
+        "<td>" + escapeHtml(p.phone || "—") + "</td>" +
+        "<td>" + roles + "</td>" +
+        "<td><span class=\"pill" + (p.is_core_staff ? "" : " off") + "\" data-toggle-core data-id=\"" + p.id + "\" style=\"cursor:pointer;\">" + (p.is_core_staff ? "Yes" : "No") + "</span></td>" +
+        "<td><span class=\"pill" + (p.active ? "" : " off") + "\" data-toggle-active data-id=\"" + p.id + "\" style=\"cursor:pointer;\">" + (p.active ? "Active" : "Inactive") + "</span></td>" +
+        "<td>" + (p.has_signed_in ? "Yes" : "No") + "</td>" +
+        "</tr>";
+    });
+    html += "</tbody></table></div><p class=\"empty\">Click a Core staff / Active pill to toggle it.</p>";
+    el.innerHTML = html;
+
+    el.querySelectorAll("[data-toggle-core]").forEach((pill) => pill.addEventListener("click", () => togglePersonFlag(pill.dataset.id, "is_core_staff")));
+    el.querySelectorAll("[data-toggle-active]").forEach((pill) => pill.addEventListener("click", () => togglePersonFlag(pill.dataset.id, "active")));
+  }
+
+  async function togglePersonFlag(id, flag) {
+    const person = peopleCache.find((p) => p.id === id);
+    if (!person) return;
+    const body = { id, [flag]: !person[flag] };
+    try {
+      const res = await authedFetch("/api/admin/people", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || "Could not update."); return; }
+      person[flag] = data.person[flag];
+      renderPeopleTable();
+    } catch (e) { alert("Could not reach the server."); }
+  }
+
+  document.getElementById("roleFormSubmit").addEventListener("click", async () => {
+    const personId = document.getElementById("roleFormPerson").value;
+    const projectId = document.getElementById("roleFormProject").value;
+    const track = document.getElementById("roleFormTrack").value;
+    const title = document.getElementById("roleFormTitle").value.trim();
+    const msg = document.getElementById("roleFormMsg");
+    if (!personId || !projectId) { setNotice(msg, "Pick a person and a project.", "err"); return; }
+    try {
+      const res = await authedFetch("/api/admin/roles", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ person_id: personId, project_id: projectId, engagement_track: track, role_title: title || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setNotice(msg, data.error || "Could not assign.", "err"); return; }
+      setNotice(msg, "Assigned.", "ok");
+      document.getElementById("roleFormTitle").value = "";
+      loadPeople();
+    } catch (e) { setNotice(msg, "Could not reach the server.", "err"); }
+  });
+
+  // ---------- Resources ----------
+  async function loadResources() {
+    const el = document.getElementById("resourcesTable");
+    try {
+      const res = await authedFetch("/api/admin/resources");
+      const data = await res.json();
+      if (!res.ok) { el.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load resources.") + "</p>"; return; }
+      renderResourcesTable(data.resources || []);
+    } catch (e) {
+      el.innerHTML = '<p class="notice show err">Could not reach the server.</p>';
+    }
+  }
+
+  function renderResourcesTable(resources) {
+    const el = document.getElementById("resourcesTable");
+    if (resources.length === 0) { el.innerHTML = '<p class="empty">No resources yet.</p>'; return; }
+    let html = '<div class="table-wrap"><table><thead><tr><th>Title</th><th>Category</th><th>Project</th><th>Required</th><th></th></tr></thead><tbody>';
+    resources.forEach((r) => {
+      html += "<tr>" +
+        "<td>" + escapeHtml(r.title) + (r.url ? ' · <a href="' + escapeHtml(r.url) + '" target="_blank" rel="noopener">link</a>' : "") + "</td>" +
+        "<td>" + escapeHtml(r.category) + "</td>" +
+        "<td>" + escapeHtml(r.project_slug || "All projects") + "</td>" +
+        "<td><span class=\"pill" + (r.required ? "" : " off") + "\" data-toggle-required data-id=\"" + r.id + "\" style=\"cursor:pointer;\">" + (r.required ? "Required" : "Optional") + "</span></td>" +
+        "<td><div class=\"row-actions\"><button class=\"small danger\" data-delete=\"" + r.id + "\">Remove</button></div></td>" +
+        "</tr>";
+    });
+    html += "</tbody></table></div>";
+    el.innerHTML = html;
+
+    el.querySelectorAll("[data-toggle-required]").forEach((pill) => pill.addEventListener("click", async () => {
+      const r = resources.find((x) => x.id === pill.dataset.id);
+      try {
+        const res = await authedFetch("/api/admin/resources", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r.id, required: !r.required }) });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || "Could not update."); return; }
+        loadResources();
+      } catch (e) { alert("Could not reach the server."); }
+    }));
+
+    el.querySelectorAll("[data-delete]").forEach((btn) => btn.addEventListener("click", async () => {
+      if (!confirm("Remove this resource? Workers will no longer see it.")) return;
+      try {
+        const res = await authedFetch("/api/admin/resources?id=" + encodeURIComponent(btn.dataset.delete), { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || "Could not remove."); return; }
+        loadResources();
+      } catch (e) { alert("Could not reach the server."); }
+    }));
+  }
+
+  document.getElementById("resAddSubmit").addEventListener("click", async () => {
+    const title = document.getElementById("resTitle").value.trim();
+    const category = document.getElementById("resCategory").value;
+    const project_id = document.getElementById("resProject").value || null;
+    const url = document.getElementById("resUrl").value.trim() || null;
+    const required = document.getElementById("resRequired").checked;
+    const msg = document.getElementById("resFormMsg");
+    if (!title) { setNotice(msg, "Give it a title.", "err"); return; }
+    try {
+      const res = await authedFetch("/api/admin/resources", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, category, project_id, url, required }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setNotice(msg, data.error || "Could not add.", "err"); return; }
+      setNotice(msg, "Added.", "ok");
+      document.getElementById("resTitle").value = "";
+      document.getElementById("resUrl").value = "";
+      document.getElementById("resRequired").checked = false;
+      loadResources();
+    } catch (e) { setNotice(msg, "Could not reach the server.", "err"); }
+  });
+
+  // ---------- Invoices ----------
+  let serviceItemsCache = [];
+  let invoiceLineItems = []; // [{serviceItemId, label, quantity, amount}]
+
+  async function loadInvoicesMeta() {
+    try {
+      const res = await authedFetch("/api/admin/invoices?meta=1");
+      const data = await res.json();
+      if (!res.ok) return;
+      fillSelect("invContractor", (data.contractors || []).map(c => [c.id, c.full_name + " (" + c.role + ")"]));
+      serviceItemsCache = data.serviceItems || [];
+      fillSelect("invServiceItem", serviceItemsCache.map(s => [s.id, s.label + " — $" + Number(s.amount).toFixed(2) + (s.pricing_type === "per_hour" ? "/hr" : "")]));
+    } catch (e) { /* non-critical */ }
+  }
+
+  function renderLineItems() {
+    const el = document.getElementById("invLineItemsList");
+    if (invoiceLineItems.length === 0) {
+      el.innerHTML = '<p class="empty">No line items added yet.</p>';
+    } else {
+      el.innerHTML = invoiceLineItems.map((li, i) =>
+        '<div class="list-item" style="display:flex; justify-content:space-between; align-items:center;">' +
+          '<span>' + escapeHtml(li.label) + " × " + li.quantity + " — $" + (li.quantity * li.amount).toFixed(2) + "</span>" +
+          '<button type="button" class="small danger" data-remove-line="' + i + '">Remove</button>' +
+        "</div>"
+      ).join("");
+      el.querySelectorAll("[data-remove-line]").forEach(btn => btn.addEventListener("click", () => {
+        invoiceLineItems.splice(Number(btn.dataset.removeLine), 1);
+        renderLineItems();
+      }));
+    }
+    const total = invoiceLineItems.reduce((sum, li) => sum + li.quantity * li.amount, 0);
+    document.getElementById("invRunningTotal").textContent = invoiceLineItems.length ? "Running total: $" + total.toFixed(2) : "";
+  }
+
+  document.getElementById("invAddLineItem").addEventListener("click", () => {
+    const serviceItemId = document.getElementById("invServiceItem").value;
+    const qty = Number(document.getElementById("invServiceQty").value) || 0;
+    const svc = serviceItemsCache.find(s => s.id === serviceItemId);
+    if (!svc || qty <= 0) return;
+    invoiceLineItems.push({ serviceItemId: svc.id, label: svc.label, quantity: qty, amount: Number(svc.amount) });
+    renderLineItems();
+  });
+
+  document.getElementById("invCreateSubmit").addEventListener("click", async () => {
+    const msg = document.getElementById("invCreateMsg");
+    const clientName = document.getElementById("invClientName").value.trim();
+    const clientPhone = document.getElementById("invClientPhone").value.trim();
+    const clientEmail = document.getElementById("invClientEmail").value.trim();
+    const clientAddress = document.getElementById("invClientAddress").value.trim();
+    const contractorId = document.getElementById("invContractor").value;
+    const scopeText = document.getElementById("invScope").value.trim();
+    const smsConsent = document.getElementById("invSmsConsent").checked;
+
+    if (!clientName) { setNotice(msg, "Client name is required.", "err"); return; }
+    if (!contractorId) { setNotice(msg, "Pick a contractor.", "err"); return; }
+    if (invoiceLineItems.length === 0) { setNotice(msg, "Add at least one line item.", "err"); return; }
+    if (smsConsent && !clientPhone) { setNotice(msg, "A phone number is required to set SMS consent.", "err"); return; }
+
+    try {
+      const res = await authedFetch("/api/admin/invoices", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          clientName, clientPhone, clientEmail, clientAddress,
+          contractorId, scopeText, smsConsent,
+          lineItems: invoiceLineItems.map(li => ({ serviceItemId: li.serviceItemId, quantity: li.quantity })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setNotice(msg, data.error || "Could not create invoice.", "err"); return; }
+      setNotice(msg, "Invoice " + data.invoice.invoice_no + " created.", "ok");
+      invoiceLineItems = [];
+      renderLineItems();
+      ["invClientName","invClientPhone","invClientEmail","invClientAddress","invScope"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("invSmsConsent").checked = false;
+      loadInvoices();
+    } catch (e) { setNotice(msg, "Could not reach the server.", "err"); }
+  });
+
+  let invoicesCache = [];
+
+  async function loadInvoices() {
+    const el = document.getElementById("invoicesTable");
+    try {
+      const res = await authedFetch("/api/admin/invoices");
+      const data = await res.json();
+      if (!res.ok) { el.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load invoices.") + "</p>"; return; }
+      invoicesCache = data.invoices || [];
+      renderInvoicesTable();
+    } catch (e) {
+      el.innerHTML = '<p class="notice show err">Could not reach the server.</p>';
+    }
+  }
+
+  function renderInvoicesTable() {
+    const el = document.getElementById("invoicesTable");
+    if (invoicesCache.length === 0) { el.innerHTML = '<p class="empty">No invoices yet — create one above.</p>'; return; }
+    let html = '<div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Client</th><th>Total</th><th>Status</th><th>Sent</th><th></th></tr></thead><tbody>';
+    invoicesCache.forEach((i) => {
+      html += "<tr>" +
+        "<td>" + escapeHtml(i.invoice_no) + "</td>" +
+        "<td>" + escapeHtml(i.client_name) + "</td>" +
+        "<td>$" + Number(i.total).toFixed(2) + "</td>" +
+        '<td><span class="pill' + (i.status === "paid" ? "" : i.status === "void" ? " off" : "") + '">' + escapeHtml(i.status) + "</span></td>" +
+        "<td>" + (i.sent_via ? escapeHtml(i.sent_via) + " · " + new Date(i.sent_at).toLocaleDateString() : "—") + "</td>" +
+        '<td><div class="row-actions">' +
+          '<a class="small secondary" style="padding:6px 11px; font-size:12.5px; border-radius:9px; border:1.5px solid var(--line); text-decoration:none; color:var(--blue);" href="/invoice/' + encodeURIComponent(i.public_token) + '" target="_blank" rel="noopener">View</a>' +
+          '<button class="small secondary" data-detail="' + i.id + '">Details</button>' +
+          '<button class="small secondary" data-email="' + i.id + '">Email</button>' +
+          '<button class="small secondary" data-sms="' + i.id + '">Text</button>' +
+          (i.status !== "paid" && i.status !== "void" ? '<button class="small" data-paid="' + i.id + '">Mark paid</button>' : "") +
+          (i.status !== "void" ? '<button class="small danger" data-void="' + i.id + '">Void</button>' : "") +
+        "</div></td>" +
+        "</tr>";
+    });
+    html += "</tbody></table></div>";
+    el.innerHTML = html;
+
+    el.querySelectorAll("[data-detail]").forEach(b => b.addEventListener("click", () => showInvoiceDetail(b.dataset.detail)));
+    el.querySelectorAll("[data-email]").forEach(b => b.addEventListener("click", () => sendInvoice(b.dataset.email, "send_email")));
+    el.querySelectorAll("[data-sms]").forEach(b => b.addEventListener("click", () => sendInvoice(b.dataset.sms, "send_sms")));
+    el.querySelectorAll("[data-paid]").forEach(b => b.addEventListener("click", () => invoiceAction(b.dataset.paid, "mark_paid")));
+    el.querySelectorAll("[data-void]").forEach(b => b.addEventListener("click", () => {
+      if (confirm("Void this invoice? This can't be undone.")) invoiceAction(b.dataset.void, "void");
+    }));
+  }
+
+  async function sendInvoice(id, action) {
+    try {
+      const res = await authedFetch("/api/admin/invoices", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, invoiceId: id }) });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || "Could not send."); return; }
+      const r = data.result;
+      if (r.sent) { alert((action === "send_email" ? "Emailed." : "Texted.")); }
+      else if (r.reason === "no_consent_or_phone") { alert("Not sent — this client has no phone on file or hasn't agreed to texts."); }
+      else { alert((action === "send_email" ? "Email" : "Text") + " isn't set up yet" + (action === "send_email" ? "" : ", invoice wasn't texted") + ". (" + r.reason + ")"); }
+      loadInvoices();
+    } catch (e) { alert("Could not reach the server."); }
+  }
+
+  async function invoiceAction(id, action) {
+    try {
+      const res = await authedFetch("/api/admin/invoices", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, invoiceId: id }) });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || "Could not update."); return; }
+      loadInvoices();
+    } catch (e) { alert("Could not reach the server."); }
+  }
+
+  async function showInvoiceDetail(id) {
+    const el = document.getElementById("invoiceDetail");
+    el.innerHTML = '<div class="loading"><span class="spinner"></span> Loading…</div>';
+    try {
+      const res = await authedFetch("/api/admin/invoices?id=" + encodeURIComponent(id));
+      const data = await res.json();
+      if (!res.ok) { el.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load.") + "</p>"; return; }
+      const lineRows = data.lineItems.map(li => "<li>" + escapeHtml(li.label) + " × " + li.quantity + " — $" + Number(li.line_total).toFixed(2) + "</li>").join("");
+      const eventRows = data.events.map(e => '<div class="list-item"><div class="t">' + escapeHtml(e.event_type) + (e.channel ? " (" + escapeHtml(e.channel) + ")" : "") + '</div><div class="d">' + new Date(e.created_at).toLocaleString() + "</div></div>").join("") || '<p class="empty">No history yet.</p>';
+      el.innerHTML = '<div class="card" style="margin-top:10px;"><h3 style="margin-top:0;">' + escapeHtml(data.invoice.invoice_no) + " — " + escapeHtml(data.invoice.client_name) + '</h3>' +
+        "<ul>" + lineRows + "</ul>" +
+        '<p><strong>Total: $' + Number(data.invoice.total).toFixed(2) + '</strong></p>' +
+        '<h3>History</h3>' + eventRows + "</div>";
+    } catch (e) { el.innerHTML = '<p class="notice show err">Could not reach the server.</p>'; }
+  }
+
+  // ---------- Boot ----------
+  sb.auth.onAuthStateChange((event, session) => {
+    if (session) showApp(session);
+  });
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session) showApp(data.session);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WilGlobo Staff Portal</title>
+<style>
+  :root{
+    --ink:#0f2540;
+    --ink-soft:#51677f;
+    --line:#dce3ec;
+    --paper:#ffffff;
+    --bg:#f3f6fb;
+    --blue:#1c5fd6;
+    --blue-press:#154aab;
+    --blue-wash:#eef3fc;
+    --green:#1e9e64;
+    --amber:#b4710a;
+    --red:#c0392b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,"Segoe UI",system-ui,Roboto,sans-serif;
+    font-size:16px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:520px; margin:0 auto; padding:28px 18px 64px;}
+
+  .brand{display:flex; align-items:baseline; gap:8px; margin-bottom:2px;}
+  .brand .mark{
+    width:28px; height:28px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    flex:none; overflow:hidden;
+  }
+  .brand .mark img{width:100%; height:100%; object-fit:cover; display:block;}
+  .brand h1{font-size:19px; margin:0; font-weight:700; letter-spacing:-0.01em;}
+  .brand .tag{color:var(--ink-soft); font-size:13px; font-weight:500;}
+  .sub{color:var(--ink-soft); font-size:14px; margin:6px 0 24px;}
+
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+    margin-bottom:14px;
+    box-shadow:0 1px 2px rgba(15,37,64,0.04);
+  }
+
+  label{display:block; font-size:13px; color:var(--ink-soft); margin-bottom:7px; font-weight:500;}
+  input{
+    width:100%; padding:13px 14px; border:1.5px solid var(--line);
+    border-radius:10px; font-size:16px; margin-bottom:14px;
+    background:#fbfcfe; color:var(--ink);
+    transition:border-color .15s ease;
+  }
+  input:focus{outline:none; border-color:var(--blue); background:#fff;}
+
+  button{
+    padding:13px; border:none; border-radius:10px;
+    background:var(--blue); color:#fff; font-size:15px; font-weight:600;
+    cursor:pointer; transition:background .15s ease;
+  }
+  button.full{width:100%;}
+  button:hover{background:var(--blue-press);}
+  button:disabled{opacity:.55; cursor:default;}
+  button:focus-visible, a:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
+  button.secondary{background:#fff; color:var(--blue); border:1.5px solid var(--line);}
+  button.secondary:hover{background:var(--blue-wash); border-color:var(--blue);}
+  button.small{padding:8px 14px; font-size:13.5px; width:auto;}
+
+  .notice{font-size:13.5px; margin-top:12px; padding:10px 12px; border-radius:8px; display:none;}
+  .notice.show{display:block;}
+  .notice.info{background:#eef3fc; color:var(--ink-soft);}
+  .notice.err{background:#fbeceb; color:var(--red);}
+  .notice.ok{background:#e9f7ef; color:var(--green);}
+
+  .topbar{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;}
+  .topbar h2{font-size:18px; margin:0 0 2px; font-weight:700;}
+  .topbar .who{color:var(--ink-soft); font-size:13.5px; margin:0;}
+  .signout{
+    font-size:13px; color:var(--ink-soft); text-decoration:none;
+    padding:6px 10px; border:1px solid var(--line); border-radius:8px; flex:none;
+  }
+  .signout:hover{border-color:var(--ink-soft); color:var(--ink);}
+
+  .screen{display:none;}
+  .screen.show{display:block;}
+
+  .loading{
+    display:flex; align-items:center; gap:10px; color:var(--ink-soft); font-size:14px; padding:4px 0;
+  }
+  .spinner{
+    width:16px; height:16px; border-radius:50%;
+    border:2px solid var(--line); border-top-color:var(--blue);
+    animation:spin .7s linear infinite; flex:none;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .jobs-frame-wrap iframe{
+    width:100%; height:68vh; min-height:420px;
+    border:1px solid var(--line); border-radius:12px; display:block;
+  }
+  .open-link{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:13.5px; color:var(--blue); text-decoration:none; margin-top:12px; font-weight:600;
+  }
+  .open-link:hover{text-decoration:underline;}
+
+  .foot{color:var(--ink-soft); font-size:12.5px; text-align:center; margin-top:28px;}
+
+  /* project chooser */
+  .proj-list{display:flex; flex-direction:column; gap:10px;}
+  .proj-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 18px; border:1.5px solid var(--line); border-radius:12px;
+    background:#fff; cursor:pointer; text-align:left; width:100%;
+    font-family:inherit; color:var(--ink);
+  }
+  .proj-item:hover{border-color:var(--blue); background:var(--blue-wash);}
+  .proj-item .name{font-weight:700; font-size:15px;}
+  .proj-item .track{color:var(--ink-soft); font-size:12.5px; margin-top:2px;}
+  .proj-item .arrow{color:var(--blue); font-size:18px; flex:none; margin-left:12px;}
+
+  /* tabs */
+  .tabs{display:flex; gap:6px; margin-bottom:16px; overflow-x:auto; padding-bottom:2px;}
+  .tab{
+    flex:none; padding:9px 14px; border-radius:20px; font-size:13.5px; font-weight:600;
+    border:1.5px solid var(--line); background:#fff; color:var(--ink-soft); cursor:pointer;
+  }
+  .tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .backlink{
+    display:inline-flex; align-items:center; gap:4px; color:var(--ink-soft);
+    font-size:13.5px; text-decoration:none; margin-bottom:14px; font-weight:600;
+  }
+  .backlink:hover{color:var(--ink);}
+
+  /* shift list */
+  .shift{border:1.5px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px;}
+  .shift .title{font-weight:700; font-size:14.5px; margin-bottom:3px;}
+  .shift .meta{color:var(--ink-soft); font-size:13px; margin-bottom:10px;}
+  .shift .meta div{margin-bottom:2px;}
+
+  /* resources */
+  .res{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:13px 0; border-bottom:1px solid var(--line);}
+  .res:last-child{border-bottom:none;}
+  .res .title{font-weight:600; font-size:14.5px;}
+  .res .cat{color:var(--ink-soft); font-size:12px; text-transform:uppercase; letter-spacing:.03em; margin-top:1px;}
+  .req-badge{font-size:11px; font-weight:700; color:var(--amber); border:1px solid var(--amber); border-radius:6px; padding:1px 6px; flex:none;}
+
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:420px){.row2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="login" class="screen show">
+    <div class="brand">
+      <div class="mark"><img src="/assets/wilglobo-logo.png" alt="WilGlobo" width="28" height="28"></div>
+      <h1>WilGlobo</h1>
+      <span class="tag">Staff Portal</span>
+    </div>
+    <p class="sub">Sign in with the email on file for you.</p>
+    <div class="card">
+      <label for="email">Work email</label>
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" inputmode="email">
+      <button class="full" id="sendLink">Email me a sign-in link</button>
+      <p class="notice" id="loginMsg"></p>
+    </div>
+    <p class="foot">Trouble signing in? <a href="sms:+14036793039">Text WilGlobo Support</a> at (403) 679-3039.</p>
+  </div>
+
+  <div id="app" class="screen">
+    <div class="topbar">
+      <div>
+        <h2 id="greeting">Welcome</h2>
+        <p class="who" id="whoami"></p>
+      </div>
+      <a href="/admin.html" id="adminLink" class="signout" style="display:none; margin-right:6px;">Admin</a>
+      <a href="#" id="signOut" class="signout">Sign out</a>
+    </div>
+
+    <div id="loadingMe" class="loading"><span class="spinner"></span> Loading your account…</div>
+
+    <!-- Core staff: project chooser -->
+    <div id="chooser" class="screen">
+      <div class="card">
+        <p class="notice show info" style="margin-top:0;">You're core staff — you can see every project. The cross-project snapshot (resources, admin notes, clients to follow up, weekly tasks) isn't built yet; ask WilGlobo support for a timeline.</p>
+      </div>
+      <div class="proj-list" id="projList"></div>
+    </div>
+
+    <!-- Single project view -->
+    <div id="project" class="screen">
+      <a href="#" class="backlink" id="backToChooser" style="display:none;">&larr; All projects</a>
+      <h3 id="projectName" style="margin:0 0 14px; font-size:17px;"></h3>
+
+      <div class="tabs" id="projectTabs"></div>
+
+      <div id="tab-jobs" class="screen">
+        <div id="jobsCard" class="card">
+          <div class="loading"><span class="spinner"></span> Loading your jobs…</div>
+        </div>
+      </div>
+
+      <div id="tab-shifts" class="screen">
+        <div id="shiftsCard" class="card">
+          <div class="loading"><span class="spinner"></span> Loading open shifts…</div>
+        </div>
+      </div>
+
+      <div id="tab-info" class="screen">
+        <div class="card">
+          <div id="infoLoading" class="loading"><span class="spinner"></span> Loading your info…</div>
+          <form id="infoForm" style="display:none;">
+            <label for="phone">Your phone</label>
+            <input id="phone" type="tel" placeholder="(555) 555-5555">
+            <div class="row2">
+              <div>
+                <label for="ecName">Emergency contact name</label>
+                <input id="ecName" placeholder="Full name">
+              </div>
+              <div>
+                <label for="ecRel">Relationship</label>
+                <input id="ecRel" placeholder="e.g. Spouse">
+              </div>
+            </div>
+            <label for="ecPhone">Emergency contact phone</label>
+            <input id="ecPhone" type="tel" placeholder="(555) 555-5555">
+            <button type="submit" class="full">Save</button>
+            <p class="notice" id="infoMsg"></p>
+          </form>
+        </div>
+      </div>
+
+      <div id="tab-resources" class="screen">
+        <div id="resourcesCard" class="card">
+          <div class="loading"><span class="spinner"></span> Loading resources…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  const SUPABASE_URL = "https://gyfuaynrqpfpdexbwyxs.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5ZnVheW5ycXBmcGRleGJ3eXhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNDM1MDMsImV4cCI6MjA5OTkxOTUwM30.OpZgDkNPZu-KC3RQ8erZF6j7cvA-Gb3eUg-3zao0U4c";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const loginEl = document.getElementById("login");
+  const appEl = document.getElementById("app");
+  const loginMsg = document.getElementById("loginMsg");
+  const whoami = document.getElementById("whoami");
+  const greeting = document.getElementById("greeting");
+  const loadingMe = document.getElementById("loadingMe");
+  const chooserEl = document.getElementById("chooser");
+  const projListEl = document.getElementById("projList");
+  const projectEl = document.getElementById("project");
+  const projectNameEl = document.getElementById("projectName");
+  const projectTabsEl = document.getElementById("projectTabs");
+  const backToChooser = document.getElementById("backToChooser");
+
+  let currentToken = null;
+  let currentMe = null;
+  let currentProject = null; // the project object currently open
+  let infoLoaded = false;
+
+  function setNotice(el, text, kind){
+    el.textContent = text;
+    el.className = "notice show" + (kind ? " " + kind : "");
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  function show(el){ el.classList.add("show"); }
+  function hide(el){ el.classList.remove("show"); }
+
+  document.getElementById("sendLink").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const email = document.getElementById("email").value.trim();
+    if (!email) { setNotice(loginMsg, "Enter your email first.", "err"); return; }
+    btn.disabled = true;
+    setNotice(loginMsg, "Sending…", "info");
+    try {
+      const res = await fetch("/api/request-signin-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, redirectTo: window.location.href }),
+      });
+      const data = await res.json().catch(() => ({}));
+      btn.disabled = false;
+      setNotice(loginMsg, data.message || "If that email is on file with WilGlobo, a sign-in link is on its way.", res.ok ? "ok" : "err");
+    } catch (e) {
+      btn.disabled = false;
+      setNotice(loginMsg, "Could not reach the server. Check your connection and try again.", "err");
+    }
+  });
+
+  document.getElementById("signOut").addEventListener("click", async (e) => {
+    e.preventDefault();
+    await sb.auth.signOut();
+    location.reload();
+  });
+
+  backToChooser.addEventListener("click", (e) => {
+    e.preventDefault();
+    currentProject = null;
+    hide(projectEl);
+    show(chooserEl);
+  });
+
+  async function showApp(session) {
+    hide(loginEl);
+    show(appEl);
+    currentToken = session.access_token;
+    whoami.textContent = session.user.email;
+    await loadMe();
+  }
+
+  async function authedFetch(url, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({}, opts.headers, { Authorization: "Bearer " + currentToken });
+    return fetch(url, opts);
+  }
+
+  async function loadMe() {
+    loadingMe.style.display = "flex";
+    try {
+      const res = await authedFetch("/api/me");
+      const data = await res.json();
+      loadingMe.style.display = "none";
+      if (!res.ok) {
+        setNotice(loginMsg, data.error || "Could not load your account.", "err");
+        appEl.insertAdjacentHTML("afterbegin", '<p class="notice show err">' + escapeHtml(data.error || "Could not load your account.") + "</p>");
+        return;
+      }
+      currentMe = data;
+      greeting.textContent = "Hi, " + (data.fullName ? data.fullName.split(" ")[0] : "there");
+      if (data.isCoreStaff) document.getElementById("adminLink").style.display = "inline-flex";
+
+      if (data.projects.length === 0) {
+        projListEl.innerHTML = '<p class="notice show info">No active project yet — ask WilGlobo support to add you to one.</p>';
+        show(chooserEl);
+        return;
+      }
+
+      if (data.isCoreStaff || data.projects.length > 1) {
+        renderProjectChooser(data.projects);
+        show(chooserEl);
+      } else {
+        openProject(data.projects[0]);
+      }
+    } catch (e) {
+      loadingMe.style.display = "none";
+      appEl.insertAdjacentHTML("afterbegin", '<p class="notice show err">Could not reach the server. Check your connection and refresh.</p>');
+    }
+  }
+
+  function renderProjectChooser(projects) {
+    projListEl.innerHTML = "";
+    projects.forEach((p) => {
+      const btn = document.createElement("button");
+      btn.className = "proj-item";
+      btn.innerHTML =
+        '<div><div class="name">' + escapeHtml(p.name) + '</div>' +
+        '<div class="track">' + escapeHtml(trackLabel(p.engagementTrack)) + (p.roleTitle ? " · " + escapeHtml(p.roleTitle) : "") + '</div></div>' +
+        '<span class="arrow">&rarr;</span>';
+      btn.addEventListener("click", () => openProject(p));
+      projListEl.appendChild(btn);
+    });
+  }
+
+  function trackLabel(track) {
+    return {
+      staff: "Staff",
+      part_time: "Part-time",
+      temporary: "Temporary",
+      volunteer: "Volunteer",
+      independent_contractor: "Independent contractor",
+    }[track] || track;
+  }
+
+  function openProject(project) {
+    currentProject = project;
+    hide(chooserEl);
+    show(projectEl);
+    backToChooser.style.display = (currentMe.isCoreStaff || currentMe.projects.length > 1) ? "inline-flex" : "none";
+    projectNameEl.textContent = project.name;
+    infoLoaded = false;
+    renderProjectTabs(project);
+  }
+
+  function renderProjectTabs(project) {
+    const isTechCare = project.slug === "techcare";
+    const tabs = isTechCare
+      ? [["jobs", "My jobs"], ["shifts", "Open shifts"], ["info", "My info"], ["resources", "Resources"]]
+      : [["info", "My info"], ["resources", "Resources"]];
+
+    projectTabsEl.innerHTML = "";
+    tabs.forEach(([key, label], i) => {
+      const b = document.createElement("button");
+      b.className = "tab" + (i === 0 ? " active" : "");
+      b.textContent = label;
+      b.dataset.tab = key;
+      b.addEventListener("click", () => selectTab(key, project));
+      projectTabsEl.appendChild(b);
+    });
+
+    ["jobs", "shifts", "info", "resources"].forEach((k) => hide(document.getElementById("tab-" + k)));
+    selectTab(tabs[0][0], project);
+  }
+
+  function selectTab(key, project) {
+    [...projectTabsEl.children].forEach((b) => b.classList.toggle("active", b.dataset.tab === key));
+    ["jobs", "shifts", "info", "resources"].forEach((k) => {
+      const el = document.getElementById("tab-" + k);
+      if (k === key) show(el); else hide(el);
+    });
+    if (key === "jobs") loadJobs();
+    if (key === "shifts") loadShifts();
+    if (key === "info" && !infoLoaded) loadInfo();
+    if (key === "resources") loadResources(project.slug);
+  }
+
+  // ---- My jobs (existing flow, untouched behavior) ----
+  async function loadJobs() {
+    const jobsCard = document.getElementById("jobsCard");
+    jobsCard.innerHTML = '<div class="loading"><span class="spinner"></span> Loading your jobs…</div>';
+    try {
+      const res = await authedFetch("/api/jobs");
+      const data = await res.json();
+      if (!res.ok) {
+        jobsCard.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load jobs.") + "</p>";
+        return;
+      }
+      if (data.notice) {
+        jobsCard.innerHTML = '<p class="notice show info">' + escapeHtml(data.notice) + "</p>";
+        return;
+      }
+      if (!data.myJobsUrl) {
+        jobsCard.innerHTML = '<p class="notice show info">No jobs page linked yet.</p>';
+        return;
+      }
+      jobsCard.innerHTML =
+        '<div class="jobs-frame-wrap"><iframe src="' + data.myJobsUrl + '" title="My jobs"></iframe></div>' +
+        '<a class="open-link" href="' + data.myJobsUrl + '" target="_blank">Open in a new tab →</a>';
+    } catch (e) {
+      jobsCard.innerHTML = '<p class="notice show err">Could not reach the server. Check your connection and refresh.</p>';
+    }
+  }
+
+  // ---- Open shifts ----
+  async function loadShifts() {
+    const card = document.getElementById("shiftsCard");
+    card.innerHTML = '<div class="loading"><span class="spinner"></span> Loading open shifts…</div>';
+    try {
+      const res = await authedFetch("/api/shifts");
+      const data = await res.json();
+      if (!res.ok) {
+        card.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load open shifts.") + "</p>";
+        return;
+      }
+      if (!data.shifts || data.shifts.length === 0) {
+        card.innerHTML = '<p class="notice show info">No open shifts right now — check back later.</p>';
+        return;
+      }
+      card.innerHTML = "";
+      data.shifts.forEach((s) => {
+        const div = document.createElement("div");
+        div.className = "shift";
+        div.innerHTML =
+          '<div class="title">' + escapeHtml(s.title || "Shift") + "</div>" +
+          '<div class="meta">' +
+            (s.location ? "<div>" + escapeHtml(s.location) + "</div>" : "") +
+            (s.start ? "<div>" + escapeHtml(formatRange(s.start, s.end)) + "</div>" : "") +
+            (s.client ? "<div>" + escapeHtml(s.client) + "</div>" : "") +
+          "</div>" +
+          '<button class="small" data-job="' + escapeHtml(s.id) + '">Claim this shift</button>' +
+          '<p class="notice" style="margin-top:8px;"></p>';
+        const btn = div.querySelector("button");
+        const msg = div.querySelector(".notice");
+        btn.addEventListener("click", () => claimShift(s.id, btn, msg));
+        card.appendChild(div);
+      });
+    } catch (e) {
+      card.innerHTML = '<p class="notice show err">Could not reach the server. Check your connection and refresh.</p>';
+    }
+  }
+
+  function formatRange(start, end) {
+    try {
+      const s = new Date(start);
+      const e = end ? new Date(end) : null;
+      const opts = { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
+      let out = s.toLocaleString(undefined, opts);
+      if (e) out += " – " + e.toLocaleString(undefined, { hour: "numeric", minute: "2-digit" });
+      return out;
+    } catch (e) {
+      return start + (end ? " – " + end : "");
+    }
+  }
+
+  async function claimShift(jobId, btn, msgEl) {
+    btn.disabled = true;
+    btn.textContent = "Claiming…";
+    try {
+      const res = await authedFetch("/api/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setNotice(msgEl, data.error || "Could not claim this shift.", "err");
+        btn.disabled = false;
+        btn.textContent = "Claim this shift";
+        return;
+      }
+      setNotice(msgEl, "Claimed — check My jobs.", "ok");
+      btn.textContent = "Claimed";
+      setTimeout(loadShifts, 1200);
+    } catch (e) {
+      setNotice(msgEl, "Could not reach the server.", "err");
+      btn.disabled = false;
+      btn.textContent = "Claim this shift";
+    }
+  }
+
+  // ---- My info ----
+  async function loadInfo() {
+    const loading = document.getElementById("infoLoading");
+    const form = document.getElementById("infoForm");
+    loading.style.display = "flex";
+    form.style.display = "none";
+    try {
+      const res = await authedFetch("/api/contact");
+      const data = await res.json();
+      loading.style.display = "none";
+      if (!res.ok) {
+        document.getElementById("infoLoading").outerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load your info.") + "</p>";
+        return;
+      }
+      document.getElementById("phone").value = data.phone || "";
+      document.getElementById("ecName").value = (data.emergencyContact && data.emergencyContact.name) || "";
+      document.getElementById("ecPhone").value = (data.emergencyContact && data.emergencyContact.phone) || "";
+      document.getElementById("ecRel").value = (data.emergencyContact && data.emergencyContact.relationship) || "";
+      form.style.display = "block";
+      infoLoaded = true;
+    } catch (e) {
+      loading.style.display = "none";
+      setNotice(document.getElementById("infoMsg"), "Could not reach the server.", "err");
+    }
+  }
+
+  document.getElementById("infoForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("infoMsg");
+    setNotice(msg, "Saving…", "info");
+    try {
+      const res = await authedFetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: document.getElementById("phone").value.trim(),
+          emergencyContactName: document.getElementById("ecName").value.trim(),
+          emergencyContactPhone: document.getElementById("ecPhone").value.trim(),
+          emergencyContactRelationship: document.getElementById("ecRel").value.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setNotice(msg, data.error || "Could not save.", "err"); return; }
+      setNotice(msg, "Saved.", "ok");
+    } catch (e) {
+      setNotice(msg, "Could not reach the server.", "err");
+    }
+  });
+
+  // ---- Resources ----
+  async function loadResources(slug) {
+    const card = document.getElementById("resourcesCard");
+    card.innerHTML = '<div class="loading"><span class="spinner"></span> Loading resources…</div>';
+    try {
+      const res = await authedFetch("/api/resources?project=" + encodeURIComponent(slug));
+      const data = await res.json();
+      if (!res.ok) {
+        card.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load resources.") + "</p>";
+        return;
+      }
+      if (!data.resources || data.resources.length === 0) {
+        card.innerHTML = '<p class="notice show info">' + escapeHtml(data.notice || "Nothing here yet.") + "</p>";
+        return;
+      }
+      card.innerHTML = "";
+      data.resources.forEach((r) => {
+        const row = document.createElement(r.url ? "a" : "div");
+        row.className = "res";
+        if (r.url) { row.href = r.url; row.target = "_blank"; row.style.textDecoration = "none"; row.style.color = "inherit"; }
+        row.innerHTML =
+          '<div><div class="title">' + escapeHtml(r.title) + '</div>' +
+          '<div class="cat">' + escapeHtml(r.category.replace("_", " ")) + '</div></div>' +
+          (r.required ? '<span class="req-badge">Required</span>' : "");
+        card.appendChild(row);
+      });
+    } catch (e) {
+      card.innerHTML = '<p class="notice show err">Could not reach the server. Check your connection and refresh.</p>';
+    }
+  }
+
+  sb.auth.onAuthStateChange((_event, session) => {
+    if (session) showApp(session);
+  });
+
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) showApp(session);
+  });
+</script>
+</body>
+</html>
