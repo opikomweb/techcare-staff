@@ -4,25 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Your WilGlobo TechCare Invoice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{ --ink:#0f2540; --ink-soft:#51677f; --line:#dce3ec; --paper:#ffffff; --bg:#f3f6fb; --blue:#1c5fd6; --blue-press:#154aab; --green:#1e9e64; --green-wash:#e9f7ef; --amber:#b4710a; --amber-wash:#fdf3e4; }
+  :root{ --ink:#1b2533; --ink-soft:#66717d; --line:#dce3ec; --paper:#ffffff; --bg:#eef3f9; --navy:#0b1e33; --blue:#0b6fd6; --blue-press:#0958ac; --green:#1e9e64; --green-wash:#e9f7ef; --amber:#b4710a; --amber-wash:#fdf3e4; }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:18px;line-height:1.5}
-  .wrap{max-width:560px;margin:0 auto;padding:28px 20px 60px}
-  .brand{font-size:24px;font-weight:700;margin:0 0 4px;display:flex;align-items:center;gap:10px}
-  .brand img{width:32px;height:32px;border-radius:8px;object-fit:cover;flex:none}
-  .sub{color:var(--ink-soft);margin:0 0 24px}
-  .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,"Helvetica Neue",-apple-system,sans-serif;font-size:18px;line-height:1.5}
+  .site-header{display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--navy)}
+  .site-header .mark{width:32px;height:32px;border-radius:7px;overflow:hidden;flex:none;background:#fff}
+  .site-header .mark img{width:100%;height:100%;object-fit:contain;display:block}
+  .site-header .word{color:#fff;font-family:Montserrat,Arial,sans-serif;font-size:17px;font-weight:700}
+  .site-header .tag{color:#9fb3c8;font-size:13px;font-weight:500}
+  .wrap{max-width:560px;margin:0 auto;padding:22px 20px 60px}
+  .sub{color:var(--ink-soft);margin:0 0 24px;font-size:16px}
+  .card{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:22px;margin-bottom:18px;box-shadow:0 2px 10px rgba(11,30,51,0.06)}
+  .card.pending,.card.sent{border-left-color:var(--amber)}
+  .card.paid{border-left-color:var(--green)}
+  .card.void{border-left-color:var(--ink-soft)}
   .no{color:var(--ink-soft);font-size:16px;margin:0 0 14px}
   table{width:100%;border-collapse:collapse;font-size:17px}
   th,td{padding:10px 4px;text-align:left;border-bottom:1px solid var(--line)}
   th:last-child,td:last-child{text-align:right}
   .total-row td{font-weight:700;font-size:20px;border-bottom:none;padding-top:16px}
-  .status{display:inline-block;padding:4px 12px;border-radius:999px;font-size:15px;font-weight:600;margin-bottom:10px}
+  .status{display:inline-block;padding:5px 12px;border-radius:999px;font-size:15px;font-weight:700;margin-bottom:10px}
   .status.pending,.status.sent{background:var(--amber-wash);color:var(--amber)}
   .status.paid{background:var(--green-wash);color:var(--green)}
   .status.void{background:#eee;color:#777}
-  .pay-btn{display:block;text-align:center;background:var(--blue);color:#fff;text-decoration:none;font-weight:700;font-size:19px;padding:16px;border-radius:10px;margin-top:8px}
+  .pay-btn{display:block;text-align:center;background:var(--blue);color:#fff;text-decoration:none;font-weight:700;font-size:19px;padding:16px;border-radius:10px;margin-top:8px;min-height:44px;line-height:1.5}
   .pay-btn:active{background:var(--blue-press)}
   .help{color:var(--ink-soft);font-size:16px;margin-top:22px}
   .footer{color:var(--ink-soft);font-size:15px;text-align:center;margin-top:30px}
@@ -31,8 +40,12 @@
 </style>
 </head>
 <body>
+<header class="site-header">
+  <div class="mark"><img src="/assets/techcare-logo.png" alt="TechCare by WilGlobo"></div>
+  <span class="word">TechCare</span>
+  <span class="tag">by WilGlobo</span>
+</header>
 <div class="wrap">
-  <p class="brand"><img src="/assets/wilglobo-logo.png" alt="WilGlobo">WilGlobo TechCare</p>
   <p class="sub">Your invoice</p>
   <div id="content" class="card"><p class="loading">Loading your invoice…</p></div>
   <p class="footer">Questions about this invoice? Call or text (403) 679-3039, or email tech@wilglobo.com.</p>
@@ -71,6 +84,7 @@
           '<p class="help">To pay this invoice, send an Interac e-Transfer to <strong>sales@wilglobo.com</strong>, or call/text (403) 679-3039 to pay another way.</p>';
       }
 
+      el.className = "card " + esc(inv.status);
       el.innerHTML =
         '<span class="status ' + esc(inv.status) + '">' + esc(statusLabel) + "</span>" +
         '<p class="no">Invoice ' + esc(inv.invoice_no) + "</p>" +

@@ -4,66 +4,81 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WilGlobo Staff Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#0f2540;
-    --ink-soft:#51677f;
+    --ink:#1b2533;
+    --ink-soft:#66717d;
     --line:#dce3ec;
     --paper:#ffffff;
-    --bg:#f3f6fb;
-    --blue:#1c5fd6;
-    --blue-press:#154aab;
-    --blue-wash:#eef3fc;
+    --bg:#eef3f9;
+    --navy:#0b1e33;
+    --blue:#0b6fd6;
+    --blue-press:#0958ac;
+    --blue-wash:#eaf2fc;
     --green:#1e9e64;
     --amber:#b4710a;
     --red:#c0392b;
-    --radius:14px;
+    --radius:12px;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
     background:var(--bg);
     color:var(--ink);
-    font-family:-apple-system,"Segoe UI",system-ui,Roboto,sans-serif;
-    font-size:16px;
-    line-height:1.45;
+    font-family:Arial,"Helvetica Neue",-apple-system,"Segoe UI",system-ui,Roboto,sans-serif;
+    font-size:17px;
+    line-height:1.5;
     -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:520px; margin:0 auto; padding:28px 18px 64px;}
+  h1,h2,h3,.brand h1,.site-header .word{font-family:Montserrat,Arial,sans-serif;}
+  .wrap{max-width:520px; margin:0 auto; padding:20px 18px 64px;}
 
-  .brand{display:flex; align-items:baseline; gap:8px; margin-bottom:2px;}
-  .brand .mark{
-    width:28px; height:28px; border-radius:8px;
-    display:flex; align-items:center; justify-content:center;
-    flex:none; overflow:hidden;
+  /* persistent header — never hidden by screen state, carries the brand
+     mark through login, the chooser, every tab, admin and invoice pages */
+  .site-header{
+    display:flex; align-items:center; gap:10px;
+    padding:14px 18px; background:var(--navy); position:sticky; top:0; z-index:10;
   }
-  .brand .mark img{width:100%; height:100%; object-fit:cover; display:block;}
-  .brand h1{font-size:19px; margin:0; font-weight:700; letter-spacing:-0.01em;}
-  .brand .tag{color:var(--ink-soft); font-size:13px; font-weight:500;}
-  .sub{color:var(--ink-soft); font-size:14px; margin:6px 0 24px;}
+  .site-header .mark{width:30px; height:30px; border-radius:7px; overflow:hidden; flex:none; background:#fff;}
+  .site-header .mark img{width:100%; height:100%; object-fit:contain; display:block;}
+  .site-header .word{color:#fff; font-size:16px; font-weight:700; letter-spacing:-0.01em;}
+  .site-header .tag{color:#9fb3c8; font-size:12.5px; font-weight:500; margin-left:2px;}
+
+  .brand{display:none;} /* logo now lives in .site-header; kept for legacy selectors */
+  .sub{color:var(--ink-soft); font-size:14.5px; margin:6px 0 22px;}
 
   .card{
     background:var(--paper);
     border:1px solid var(--line);
+    border-left:4px solid var(--line);
     border-radius:var(--radius);
-    padding:22px;
+    padding:20px;
     margin-bottom:14px;
-    box-shadow:0 1px 2px rgba(15,37,64,0.04);
+    box-shadow:0 2px 10px rgba(11,30,51,0.06);
   }
+  .card.status-ok{border-left-color:var(--green);}
+  .card.status-warn{border-left-color:var(--amber);}
+  .card.status-err{border-left-color:var(--red);}
+  .card.status-info{border-left-color:var(--blue);}
 
-  label{display:block; font-size:13px; color:var(--ink-soft); margin-bottom:7px; font-weight:500;}
+  label{display:block; font-size:13.5px; color:var(--ink-soft); margin-bottom:7px; font-weight:600;}
   input{
-    width:100%; padding:13px 14px; border:1.5px solid var(--line);
-    border-radius:10px; font-size:16px; margin-bottom:14px;
+    width:100%; padding:14px; border:1.5px solid var(--line);
+    border-radius:10px; font-size:17px; margin-bottom:14px;
     background:#fbfcfe; color:var(--ink);
     transition:border-color .15s ease;
+    min-height:44px;
   }
   input:focus{outline:none; border-color:var(--blue); background:#fff;}
 
   button{
-    padding:13px; border:none; border-radius:10px;
-    background:var(--blue); color:#fff; font-size:15px; font-weight:600;
+    padding:13px 16px; border:none; border-radius:10px;
+    background:var(--blue); color:#fff; font-size:16px; font-weight:700;
     cursor:pointer; transition:background .15s ease;
+    min-height:44px;
   }
   button.full{width:100%;}
   button:hover{background:var(--blue-press);}
@@ -71,7 +86,7 @@
   button:focus-visible, a:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
   button.secondary{background:#fff; color:var(--blue); border:1.5px solid var(--line);}
   button.secondary:hover{background:var(--blue-wash); border-color:var(--blue);}
-  button.small{padding:8px 14px; font-size:13.5px; width:auto;}
+  button.small{padding:9px 14px; font-size:14px; width:auto; min-height:38px;}
 
   .notice{font-size:13.5px; margin-top:12px; padding:10px 12px; border-radius:8px; display:none;}
   .notice.show{display:block;}
@@ -119,52 +134,83 @@
     display:flex; justify-content:space-between; align-items:center;
     padding:16px 18px; border:1.5px solid var(--line); border-radius:12px;
     background:#fff; cursor:pointer; text-align:left; width:100%;
-    font-family:inherit; color:var(--ink);
+    font-family:inherit; color:var(--ink); min-height:44px;
+    box-shadow:0 1px 4px rgba(11,30,51,0.05);
   }
-  .proj-item:hover{border-color:var(--blue); background:var(--blue-wash);}
-  .proj-item .name{font-weight:700; font-size:15px;}
-  .proj-item .track{color:var(--ink-soft); font-size:12.5px; margin-top:2px;}
-  .proj-item .arrow{color:var(--blue); font-size:18px; flex:none; margin-left:12px;}
+  .proj-item:hover{border-color:var(--blue); background:var(--blue-wash); box-shadow:0 2px 8px rgba(11,111,214,0.12);}
+  .proj-item .name{font-weight:700; font-size:16px;}
+  .proj-item .track{color:var(--ink-soft); font-size:13px; margin-top:2px;}
+  .proj-item .arrow{color:var(--blue); font-size:19px; flex:none; margin-left:12px;}
 
   /* tabs */
   .tabs{display:flex; gap:6px; margin-bottom:16px; overflow-x:auto; padding-bottom:2px;}
   .tab{
-    flex:none; padding:9px 14px; border-radius:20px; font-size:13.5px; font-weight:600;
+    flex:none; padding:11px 16px; border-radius:20px; font-size:14px; font-weight:700;
     border:1.5px solid var(--line); background:#fff; color:var(--ink-soft); cursor:pointer;
+    min-height:44px;
   }
-  .tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .tab.active{background:var(--navy); color:#fff; border-color:var(--navy);}
   .backlink{
     display:inline-flex; align-items:center; gap:4px; color:var(--ink-soft);
-    font-size:13.5px; text-decoration:none; margin-bottom:14px; font-weight:600;
+    font-size:14px; text-decoration:none; margin-bottom:14px; font-weight:600;
   }
   .backlink:hover{color:var(--ink);}
 
   /* shift list */
-  .shift{border:1.5px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px;}
-  .shift .title{font-weight:700; font-size:14.5px; margin-bottom:3px;}
-  .shift .meta{color:var(--ink-soft); font-size:13px; margin-bottom:10px;}
+  .shift{border:1.5px solid var(--line); border-left:4px solid var(--blue); border-radius:12px; padding:14px 16px; margin-bottom:10px; background:#fff;}
+  .shift .title{font-weight:700; font-size:15px; margin-bottom:3px;}
+  .shift .meta{color:var(--ink-soft); font-size:13.5px; margin-bottom:10px;}
   .shift .meta div{margin-bottom:2px;}
 
-  /* resources */
-  .res{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:13px 0; border-bottom:1px solid var(--line);}
-  .res:last-child{border-bottom:none;}
-  .res .title{font-weight:600; font-size:14.5px;}
-  .res .cat{color:var(--ink-soft); font-size:12px; text-transform:uppercase; letter-spacing:.03em; margin-top:1px;}
-  .req-badge{font-size:11px; font-weight:700; color:var(--amber); border:1px solid var(--amber); border-radius:6px; padding:1px 6px; flex:none;}
+  /* resources bookshelf */
+  .res-toolbar{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+  .res-toolbar input[type="search"]{flex:1 1 180px; margin-bottom:0;}
+  .res-filter{
+    flex:none; padding:0 16px; border-radius:10px; font-size:14px; font-weight:700;
+    border:1.5px solid var(--line); background:#fff; color:var(--ink-soft); cursor:pointer;
+    min-height:44px;
+  }
+  .res-filter.active{background:var(--blue-wash); border-color:var(--blue); color:var(--blue);}
+  .shelf{margin-bottom:22px;}
+  .shelf:last-child{margin-bottom:0;}
+  .shelf-title{
+    font-family:Montserrat,Arial,sans-serif; font-size:13px; font-weight:700;
+    color:var(--navy); margin:0 0 10px; display:flex; align-items:center; gap:8px;
+  }
+  .shelf-title .rule{flex:1; height:2px; background:var(--line); border-radius:2px;}
+  .book-grid{display:flex; flex-direction:column; gap:10px;}
+  .book{
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--line);
+    border-radius:var(--radius); padding:14px 16px;
+    box-shadow:0 1px 4px rgba(11,30,51,0.05);
+  }
+  .book.badge-signed{border-left-color:var(--green);}
+  .book.badge-needs{border-left-color:var(--amber);}
+  .book.badge-read{border-left-color:var(--ink-soft);}
+  .book .code{font-size:11.5px; font-weight:700; color:var(--blue); letter-spacing:.03em; text-transform:uppercase;}
+  .book .title{font-weight:700; font-size:15.5px; margin:3px 0 2px;}
+  .book .meta{color:var(--ink-soft); font-size:13px; margin-bottom:10px;}
+  .book .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .doc-badge{font-size:12px; font-weight:700; border-radius:6px; padding:4px 9px; flex:none;}
+  .doc-badge.signed{color:var(--green); background:#e9f7ef;}
+  .doc-badge.needs{color:var(--amber); background:#fdf3e7;}
+  .doc-badge.read{color:var(--ink-soft); background:#f1f3f6;}
+  .book .actions{display:flex; gap:8px;}
+  .book .actions a, .book .actions button{text-decoration:none;}
 
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   @media (max-width:420px){.row2{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
+<header class="site-header" id="siteHeader">
+  <div class="mark"><img id="headerLogo" src="/assets/wilglobo-logo.png" alt="WilGlobo"></div>
+  <span class="word" id="headerWord">WilGlobo</span>
+  <span class="tag" id="headerTag">Staff Portal</span>
+</header>
 <div class="wrap">
 
   <div id="login" class="screen show">
-    <div class="brand">
-      <div class="mark"><img src="/assets/wilglobo-logo.png" alt="WilGlobo" width="28" height="28"></div>
-      <h1>WilGlobo</h1>
-      <span class="tag">Staff Portal</span>
-    </div>
     <p class="sub">Sign in with the email on file for you.</p>
     <div class="card">
       <label for="email">Work email</label>
@@ -282,6 +328,27 @@
   function show(el){ el.classList.add("show"); }
   function hide(el){ el.classList.remove("show"); }
 
+  // The header (logo + wordmark) is outside every .screen, so it's never
+  // hidden by login/chooser/project swaps — this just repaints which brand
+  // it shows. TechCare screens get the TechCare mark; everything else
+  // (login, chooser, cross-project views) keeps the WilGlobo mark.
+  const headerLogo = document.getElementById("headerLogo");
+  const headerWord = document.getElementById("headerWord");
+  const headerTag = document.getElementById("headerTag");
+  function setHeaderBrand(isTechCare) {
+    if (isTechCare) {
+      headerLogo.src = "/assets/techcare-logo.png";
+      headerLogo.alt = "TechCare by WilGlobo";
+      headerWord.textContent = "TechCare";
+      headerTag.textContent = "by WilGlobo";
+    } else {
+      headerLogo.src = "/assets/wilglobo-logo.png";
+      headerLogo.alt = "WilGlobo";
+      headerWord.textContent = "WilGlobo";
+      headerTag.textContent = "Staff Portal";
+    }
+  }
+
   document.getElementById("sendLink").addEventListener("click", async (e) => {
     const btn = e.currentTarget;
     const email = document.getElementById("email").value.trim();
@@ -312,6 +379,7 @@
   backToChooser.addEventListener("click", (e) => {
     e.preventDefault();
     currentProject = null;
+    setHeaderBrand(false);
     hide(projectEl);
     show(chooserEl);
   });
@@ -389,6 +457,7 @@
 
   function openProject(project) {
     currentProject = project;
+    setHeaderBrand(project.slug === "techcare");
     hide(chooserEl);
     show(projectEl);
     backToChooser.style.display = (currentMe.isCoreStaff || currentMe.projects.length > 1) ? "inline-flex" : "none";
@@ -582,7 +651,15 @@
     }
   });
 
-  // ---- Resources ----
+  // ---- Resources: the bookshelf ----
+  let allResources = [];
+  let resourceSearch = "";
+  let resourceNeedsOnly = false;
+
+  const BADGE_LABEL = { signed: "Signed by you", needs_signature: "Needs your signature", read_only: "Read only" };
+  const BADGE_CLASS = { signed: "signed", needs_signature: "needs", read_only: "read" };
+  const BOOK_BORDER_CLASS = { signed: "badge-signed", needs_signature: "badge-needs", read_only: "badge-read" };
+
   async function loadResources(slug) {
     const card = document.getElementById("resourcesCard");
     card.innerHTML = '<div class="loading"><span class="spinner"></span> Loading resources…</div>';
@@ -593,24 +670,89 @@
         card.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load resources.") + "</p>";
         return;
       }
-      if (!data.resources || data.resources.length === 0) {
-        card.innerHTML = '<p class="notice show info">' + escapeHtml(data.notice || "Nothing here yet.") + "</p>";
-        return;
-      }
-      card.innerHTML = "";
-      data.resources.forEach((r) => {
-        const row = document.createElement(r.url ? "a" : "div");
-        row.className = "res";
-        if (r.url) { row.href = r.url; row.target = "_blank"; row.style.textDecoration = "none"; row.style.color = "inherit"; }
-        row.innerHTML =
-          '<div><div class="title">' + escapeHtml(r.title) + '</div>' +
-          '<div class="cat">' + escapeHtml(r.category.replace("_", " ")) + '</div></div>' +
-          (r.required ? '<span class="req-badge">Required</span>' : "");
-        card.appendChild(row);
-      });
+      allResources = data.resources || [];
+      resourceSearch = "";
+      resourceNeedsOnly = false;
+      renderResourceShelf(data.notice);
     } catch (e) {
       card.innerHTML = '<p class="notice show err">Could not reach the server. Check your connection and refresh.</p>';
     }
+  }
+
+  function renderResourceShelf(notice) {
+    const card = document.getElementById("resourcesCard");
+    if (allResources.length === 0) {
+      card.innerHTML = '<p class="notice show info">' + escapeHtml(notice || "Nothing here yet.") + "</p>";
+      return;
+    }
+
+    // Toolbar is built once and left alone on re-render (renderShelfBody
+    // only touches #resShelfBody) so the search input never loses focus
+    // or caret position while typing.
+    if (!document.getElementById("resSearch")) {
+      card.innerHTML =
+        '<div class="res-toolbar">' +
+          '<input type="search" id="resSearch" placeholder="Search documents…">' +
+          '<button type="button" class="res-filter" id="resFilterNeeds">Needs my signature</button>' +
+        '</div>' +
+        '<div id="resShelfBody"></div>';
+      document.getElementById("resSearch").addEventListener("input", (e) => {
+        resourceSearch = e.target.value;
+        renderShelfBody();
+      });
+      document.getElementById("resFilterNeeds").addEventListener("click", (e) => {
+        resourceNeedsOnly = !resourceNeedsOnly;
+        e.currentTarget.classList.toggle("active", resourceNeedsOnly);
+        renderShelfBody();
+      });
+    }
+    renderShelfBody();
+  }
+
+  function renderShelfBody() {
+    const body = document.getElementById("resShelfBody");
+    if (!body) return;
+    const q = resourceSearch.trim().toLowerCase();
+    const filtered = allResources.filter((r) => {
+      if (resourceNeedsOnly && r.badge !== "needs_signature") return false;
+      if (!q) return true;
+      return (r.title + " " + r.code).toLowerCase().includes(q);
+    });
+
+    const shelvesPresent = new Set(allResources.map((r) => r.shelf));
+    const orderedShelves = ["Agreements", "Policies", "Safety", "Privacy", "Training", "Forms and Templates"].filter((s) => shelvesPresent.has(s));
+
+    if (filtered.length === 0) {
+      body.innerHTML = '<p class="notice show info">No documents match.</p>';
+      return;
+    }
+
+    let html = "";
+    orderedShelves.forEach((shelfName) => {
+      const docs = filtered.filter((r) => r.shelf === shelfName);
+      if (docs.length === 0) return;
+      html += '<div class="shelf"><h4 class="shelf-title">' + escapeHtml(shelfName) + '<span class="rule"></span></h4><div class="book-grid">';
+      docs.forEach((r) => {
+        html +=
+          '<div class="book ' + BOOK_BORDER_CLASS[r.badge] + '">' +
+            '<div class="code">' + escapeHtml(r.code) + '</div>' +
+            '<div class="title">' + escapeHtml(r.title) + '</div>' +
+            '<div class="meta">' +
+              (r.version ? "v" + escapeHtml(r.version) : "") +
+              (r.lastUpdated ? " · Updated " + escapeHtml(r.lastUpdated) : "") +
+            '</div>' +
+            '<div class="row">' +
+              '<span class="doc-badge ' + BADGE_CLASS[r.badge] + '">' + BADGE_LABEL[r.badge] + '</span>' +
+              '<div class="actions">' +
+                (r.url ? '<a href="' + r.url + '" target="_blank"><button type="button" class="small secondary">Read</button></a>' : "") +
+                (r.badge === "needs_signature" && r.url ? '<a href="' + r.url + '" target="_blank"><button type="button" class="small">Sign</button></a>' : "") +
+              '</div>' +
+            '</div>' +
+          '</div>';
+      });
+      html += "</div></div>";
+    });
+    body.innerHTML = html;
   }
 
   sb.auth.onAuthStateChange((_event, session) => {

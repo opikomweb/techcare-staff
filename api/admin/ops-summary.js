@@ -68,6 +68,10 @@ module.exports = async (req, res) => {
       airtableList(TABLES.acknowledgements, ["Signed_At"]),
     ]);
 
+    // Airtable deep links so "Needs attention" / "Workers not ready" /
+    // etc. rows can open straight to the record behind them.
+    const recordUrl = (tableId, recordId) => `https://airtable.com/${BASE_ID}/${tableId}/${recordId}`;
+
     // Jobs by status
     const jobsByStatus = {};
     let openForClaim = 0;
@@ -80,9 +84,10 @@ module.exports = async (req, res) => {
       if (f.Open_For_Claim) openForClaim++;
       if ((f.Dispatch_Blockers && f.Dispatch_Blockers.trim()) || f.Checkout_Overdue === 1 || status === "Issues/Blocked") {
         needsAttention.push({
-          job: f.Job_Name || r.id,
+          job: f.Job_Name || "Unnamed job",
           client: f.Client_Name || null,
           reason: f.Checkout_Overdue === 1 ? "Checkout overdue" : (f.Dispatch_Blockers || "Issues/Blocked"),
+          recordUrl: recordUrl(TABLES.jobs, r.id),
         });
       }
       if (f.Invoice_Status === "Sent" && typeof f.Job_Total === "number") {
@@ -90,20 +95,25 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Workers not ready
+    // Workers not ready. Full_Name can come back empty (Airtable omits
+    // blank fields entirely, so f.Full_Name is undefined, not "") — that
+    // used to render as a blank row with no way to tell which worker it
+    // was. Always show a name now, falling back to "Unnamed worker" plus
+    // a link straight to the Airtable record when there's nothing to show.
     const workersNotReady = [];
     const expiringSoon = [];
     const in30Days = Date.now() + 30 * 24 * 60 * 60 * 1000;
     for (const r of workers) {
       const f = r.fields;
+      const name = (f.Full_Name && f.Full_Name.trim()) || "Unnamed worker";
       if (f.Status === "Active" && f.Dispatch_Gaps && f.Dispatch_Gaps.trim()) {
-        workersNotReady.push({ name: f.Full_Name, gaps: f.Dispatch_Gaps.trim() });
+        workersNotReady.push({ name, gaps: f.Dispatch_Gaps.trim(), recordUrl: recordUrl(TABLES.directory, r.id) });
       }
       for (const [label, dateStr] of [["Insurance", f.Insurance_Expiry], ["WCB clearance", f.WCB_Clearance_Expiry]]) {
         if (dateStr) {
           const t = new Date(dateStr).getTime();
           if (!Number.isNaN(t) && t <= in30Days) {
-            expiringSoon.push({ name: f.Full_Name, what: label, expires: dateStr });
+            expiringSoon.push({ name, what: label, expires: dateStr, recordUrl: recordUrl(TABLES.directory, r.id) });
           }
         }
       }
@@ -112,7 +122,11 @@ module.exports = async (req, res) => {
     // Clients with unsigned forms
     const clientsUnsigned = clients
       .filter((r) => r.fields.Client_Gaps && r.fields.Client_Gaps.trim())
-      .map((r) => ({ name: r.fields.Client_Name, gaps: r.fields.Client_Gaps.trim() }));
+      .map((r) => ({
+        name: (r.fields.Client_Name && r.fields.Client_Name.trim()) || "Unnamed client",
+        gaps: r.fields.Client_Gaps.trim(),
+        recordUrl: recordUrl(TABLES.clients, r.id),
+      }));
 
     // Signatures this week
     const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
