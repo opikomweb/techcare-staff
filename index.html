@@ -87,6 +87,11 @@
   button.secondary{background:#fff; color:var(--blue); border:1.5px solid var(--line);}
   button.secondary:hover{background:var(--blue-wash); border-color:var(--blue);}
   button.small{padding:9px 14px; font-size:14px; width:auto; min-height:38px;}
+  a.checkin-link{
+    padding:9px 14px; border-radius:10px; background:var(--blue); color:#fff; font-size:14px; font-weight:700;
+    min-height:38px; line-height:20px; text-decoration:none; display:inline-block; margin-top:4px;
+  }
+  a.checkin-link:hover{background:var(--blue-press);}
 
   .notice{font-size:13.5px; margin-top:12px; padding:10px 12px; border-radius:8px; display:none;}
   .notice.show{display:block;}
@@ -249,6 +254,11 @@
       <div class="tabs" id="projectTabs"></div>
 
       <div id="tab-jobs" class="screen">
+        <div id="checkinCard" class="card">
+          <h3 style="margin-top:0;">Check in</h3>
+          <p class="sub" style="margin:0 0 14px;">Accept a job, check in or out, add notes and photos, or report a problem — pick a job below.</p>
+          <div id="checkinList"><div class="loading"><span class="spinner"></span> Loading your jobs…</div></div>
+        </div>
         <div id="jobsCard" class="card">
           <div class="loading"><span class="spinner"></span> Loading your jobs…</div>
         </div>
@@ -492,10 +502,50 @@
       const el = document.getElementById("tab-" + k);
       if (k === key) show(el); else hide(el);
     });
-    if (key === "jobs") loadJobs();
+    if (key === "jobs") { loadCheckins(); loadJobs(); }
     if (key === "shifts") loadShifts();
     if (key === "info" && !infoLoaded) loadInfo();
     if (key === "resources") loadResources(project.slug);
+  }
+
+  // ---- Check in (native list, links out to the existing per-job form) ----
+  async function loadCheckins() {
+    const list = document.getElementById("checkinList");
+    list.innerHTML = '<div class="loading"><span class="spinner"></span> Loading your jobs…</div>';
+    try {
+      const res = await authedFetch("/api/job-checkins");
+      const data = await res.json();
+      if (!res.ok) {
+        list.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load your jobs.") + "</p>";
+        return;
+      }
+      if (data.notice) {
+        list.innerHTML = '<p class="notice show info">' + escapeHtml(data.notice) + "</p>";
+        return;
+      }
+      if (!data.jobs || data.jobs.length === 0) {
+        list.innerHTML = '<p class="notice show info">No jobs to check in on right now.</p>';
+        return;
+      }
+      list.innerHTML = "";
+      data.jobs.forEach((j) => {
+        const div = document.createElement("div");
+        div.className = "shift";
+        div.innerHTML =
+          '<div class="title">' + escapeHtml(j.name) + (j.code ? ' <span style="font-weight:400;color:var(--ink-soft);">(' + escapeHtml(j.code) + ")</span>" : "") + "</div>" +
+          '<div class="meta">' +
+            (j.status ? "<div>Status: " + escapeHtml(j.status) + "</div>" : "") +
+            (j.start ? "<div>" + escapeHtml(formatRange(j.start, j.end)) + "</div>" : "") +
+            (j.location ? "<div>" + escapeHtml(j.location) + "</div>" : "") +
+          "</div>" +
+          (j.checkinUrl
+            ? '<a class="checkin-link" href="' + escapeHtml(j.checkinUrl) + '" target="_blank">Check in / add notes &amp; photos →</a>'
+            : '<p class="notice show info" style="margin-top:8px;">Check-in link not ready for this job yet.</p>');
+        list.appendChild(div);
+      });
+    } catch (e) {
+      list.innerHTML = '<p class="notice show err">Could not reach the server. Check your connection and refresh.</p>';
+    }
   }
 
   // ---- My jobs (existing flow, untouched behavior) ----

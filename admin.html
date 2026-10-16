@@ -134,6 +134,7 @@
     <div id="dashboard" style="display:none;">
       <div class="tabs">
         <button class="tab active" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="jobs">Jobs</button>
         <button class="tab" data-tab="people">Staff &amp; workers</button>
         <button class="tab" data-tab="resources">Resources</button>
         <button class="tab" data-tab="invoices">Invoices</button>
@@ -142,6 +143,30 @@
       <div id="tab-overview" class="screen show">
         <div id="opsTiles" class="loading"><span class="spinner"></span> Loading ops status…</div>
         <div id="opsDetails"></div>
+      </div>
+
+      <div id="tab-jobs" class="screen">
+        <div id="jobsWriteNotice" class="notice info" style="display:none;"></div>
+        <div class="card">
+          <h3 style="margin-top:0;">New job</h3>
+          <div class="inline-form">
+            <div><label>Job name</label><input id="jobFormName" placeholder="e.g. Diane - MacBook setup"></div>
+            <div><label>Client</label><select id="jobFormClient"></select></div>
+            <div><label>Start</label><input id="jobFormStart" type="datetime-local"></div>
+            <div><label>End</label><input id="jobFormEnd" type="datetime-local"></div>
+            <div><label>Location (optional)</label><input id="jobFormLocation" placeholder="Street, Calgary"></div>
+            <div><button id="jobFormSubmit">Create job</button></div>
+          </div>
+          <div id="jobFormMsg" class="notice"></div>
+        </div>
+        <div class="card section" id="jobsListCard">
+          <h3 style="margin-top:0;">All jobs</h3>
+          <div id="jobsTable" class="loading"><span class="spinner"></span> Loading jobs…</div>
+        </div>
+        <div class="card section" id="jobActivityCard">
+          <h3 style="margin-top:0;">Job activity — check-ins, notes, photos, incidents</h3>
+          <div id="jobActivityList" class="loading"><span class="spinner"></span> Loading activity…</div>
+        </div>
       </div>
 
       <div id="tab-people" class="screen">
@@ -314,6 +339,7 @@
       dashboard.style.display = "block";
       initTabs();
       loadOverview();
+      loadJobsTab();
       loadPeople();
       loadResources();
       loadInvoicesMeta();
@@ -326,7 +352,7 @@
 
   function switchTab(key) {
     document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x.dataset.tab === key));
-    ["overview", "people", "resources", "invoices"].forEach((k) => {
+    ["overview", "jobs", "people", "resources", "invoices"].forEach((k) => {
       const el = document.getElementById("tab-" + k);
       if (k === key) show(el); else hide(el);
     });
@@ -465,6 +491,231 @@
       detailsEl.appendChild(sec);
     } catch (e) {
       // Non-critical — ops tiles already loaded, just skip the audit panel.
+    }
+  }
+
+  // ---------- Jobs ----------
+  let jobFormClients = [];
+  let jobFormWorkers = [];
+
+  async function loadJobsTab() {
+    await loadJobFormData();
+    await loadJobsList();
+    await loadJobActivity();
+  }
+
+  async function loadJobFormData() {
+    try {
+      const res = await authedFetch("/api/admin/job-form-data");
+      const data = await res.json();
+      if (!res.ok) {
+        document.getElementById("jobFormMsg").className = "notice show err";
+        document.getElementById("jobFormMsg").textContent = data.error || "Could not load clients/workers.";
+        return;
+      }
+      jobFormClients = data.clients || [];
+      jobFormWorkers = data.workers || [];
+      fillSelect("jobFormClient", jobFormClients.map((c) => [c.id, c.name + (c.gaps ? " (forms not signed)" : "")]));
+    } catch (e) {
+      // Non-critical here — the jobs list and activity feed still load.
+    }
+  }
+
+  function clientName(id) {
+    const c = jobFormClients.find((x) => x.id === id);
+    return c ? c.name : id;
+  }
+  function workerName(id) {
+    const w = jobFormWorkers.find((x) => x.id === id);
+    return w ? w.name : id;
+  }
+
+  document.getElementById("jobFormSubmit").addEventListener("click", async () => {
+    const btn = document.getElementById("jobFormSubmit");
+    const msg = document.getElementById("jobFormMsg");
+    const jobName = document.getElementById("jobFormName").value.trim();
+    const clientId = document.getElementById("jobFormClient").value;
+    const start = document.getElementById("jobFormStart").value;
+    const end = document.getElementById("jobFormEnd").value;
+    const location = document.getElementById("jobFormLocation").value.trim();
+    if (!jobName || !clientId || !start || !end) {
+      setNotice(msg, "Job name, client, start and end are all required.", "err");
+      return;
+    }
+    btn.disabled = true;
+    setNotice(msg, "Creating…", "info");
+    try {
+      const res = await authedFetch("/api/admin/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobName, clientId, startTime: new Date(start).toISOString(), endTime: new Date(end).toISOString(), location }),
+      });
+      const data = await res.json();
+      btn.disabled = false;
+      if (!res.ok) { setNotice(msg, data.error || "Could not create the job.", "err"); return; }
+      setNotice(msg, "Job created as a Draft. Assign staff below, then Dispatch when ready.", "ok");
+      document.getElementById("jobFormName").value = "";
+      document.getElementById("jobFormLocation").value = "";
+      loadJobsList();
+    } catch (e) {
+      btn.disabled = false;
+      setNotice(msg, "Could not reach the server.", "err");
+    }
+  });
+
+  async function loadJobsList() {
+    const el = document.getElementById("jobsTable");
+    try {
+      const res = await authedFetch("/api/admin/jobs");
+      const data = await res.json();
+      const writeNotice = document.getElementById("jobsWriteNotice");
+      if (res.status === 503) {
+        writeNotice.style.display = "block";
+        writeNotice.textContent = data.error;
+      } else {
+        writeNotice.style.display = "none";
+      }
+      if (!res.ok && res.status !== 503) { el.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load jobs.") + "</p>"; return; }
+      renderJobsTable(data.jobs || []);
+    } catch (e) {
+      el.innerHTML = '<p class="notice show err">Could not reach the server.</p>';
+    }
+  }
+
+  function renderJobsTable(jobs) {
+    const el = document.getElementById("jobsTable");
+    if (jobs.length === 0) { el.innerHTML = '<p class="empty">No jobs yet — create one above.</p>'; return; }
+    el.innerHTML = "";
+    const wrap = document.createElement("div");
+    wrap.className = "table-wrap";
+    const table = document.createElement("table");
+    table.innerHTML = "<thead><tr><th>Job</th><th>Client</th><th>Status</th><th>When</th><th>Assigned</th><th>Actions</th></tr></thead>";
+    const tbody = document.createElement("tbody");
+    jobs.forEach((j) => {
+      const tr = document.createElement("tr");
+      const when = j.start ? new Date(j.start).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
+      const clientNames = (j.clientIds || []).map(clientName).join(", ") || "—";
+      const assignedNames = (j.assignedTo || []).map(workerName).join(", ") || "Unassigned";
+      tr.innerHTML =
+        "<td><b>" + escapeHtml(j.code) + "</b><br>" + escapeHtml(j.name) + (j.blockers ? '<br><span style="color:var(--red);font-size:12px;">' + escapeHtml(j.blockers) + "</span>" : "") + "</td>" +
+        "<td>" + escapeHtml(clientNames) + "</td>" +
+        "<td><span class=\"pill" + (j.status === "Issues/Blocked" ? "" : "") + "\">" + escapeHtml(j.status) + "</span></td>" +
+        "<td>" + escapeHtml(when) + "</td>" +
+        "<td>" + escapeHtml(assignedNames) + "</td>" +
+        "<td class=\"row-actions\"></td>";
+      const actions = tr.querySelector(".row-actions");
+
+      const assignBtn = document.createElement("button");
+      assignBtn.className = "secondary small";
+      assignBtn.type = "button";
+      assignBtn.textContent = "Assign staff";
+      assignBtn.addEventListener("click", () => openAssignPrompt(j));
+      actions.appendChild(assignBtn);
+
+      if (j.status === "Draft" && j.assignedTo && j.assignedTo.length) {
+        const dispatchBtn = document.createElement("button");
+        dispatchBtn.className = "small";
+        dispatchBtn.type = "button";
+        dispatchBtn.textContent = "Dispatch";
+        dispatchBtn.addEventListener("click", () => setJobStatus(j.id, "Dispatched", dispatchBtn));
+        actions.appendChild(dispatchBtn);
+      }
+
+      const openLink = document.createElement("a");
+      openLink.className = "rec-link";
+      openLink.href = j.recordUrl;
+      openLink.target = "_blank";
+      openLink.style.alignSelf = "center";
+      openLink.textContent = "Open →";
+      actions.appendChild(openLink);
+
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    el.appendChild(wrap);
+  }
+
+  function openAssignPrompt(job) {
+    if (jobFormWorkers.length === 0) { alert("No active workers found."); return; }
+    const current = new Set(job.assignedTo || []);
+    const lines = jobFormWorkers.map((w, i) => (i + 1) + ". " + w.name + (current.has(w.id) ? " (currently assigned)" : "") + (w.ready ? "" : " — not dispatch-ready"));
+    const answer = prompt(
+      "Assign staff to " + job.code + " — " + job.name + "\n\nEnter the numbers of workers to assign, comma-separated:\n\n" + lines.join("\n"),
+      [...current].map((id) => jobFormWorkers.findIndex((w) => w.id === id) + 1).filter((n) => n > 0).join(",")
+    );
+    if (answer === null) return;
+    const picks = answer.split(",").map((s) => parseInt(s.trim(), 10)).filter((n) => n >= 1 && n <= jobFormWorkers.length);
+    const assignedTo = picks.map((n) => jobFormWorkers[n - 1].id);
+    assignJob(job.id, assignedTo);
+  }
+
+  async function assignJob(jobId, assignedTo) {
+    try {
+      const res = await authedFetch("/api/admin/jobs?id=" + encodeURIComponent(jobId), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignedTo }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || "Could not update assignment."); return; }
+      loadJobsList();
+    } catch (e) {
+      alert("Could not reach the server.");
+    }
+  }
+
+  async function setJobStatus(jobId, status, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = "Dispatching…"; }
+    try {
+      const res = await authedFetch("/api/admin/jobs?id=" + encodeURIComponent(jobId), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || "Could not update status."); if (btn) { btn.disabled = false; btn.textContent = "Dispatch"; } return; }
+      alert("Dispatched. The calendar invite and worker email go out within about a minute.");
+      loadJobsList();
+    } catch (e) {
+      alert("Could not reach the server.");
+      if (btn) { btn.disabled = false; btn.textContent = "Dispatch"; }
+    }
+  }
+
+  async function loadJobActivity() {
+    const el = document.getElementById("jobActivityList");
+    try {
+      const res = await authedFetch("/api/admin/job-activity");
+      const data = await res.json();
+      if (!res.ok) { el.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load activity.") + "</p>"; return; }
+      const entries = data.entries || [];
+      if (entries.length === 0) { el.innerHTML = '<p class="empty">No check-ins logged yet.</p>'; return; }
+      const urgentCount = entries.filter((e) => e.urgent).length;
+      el.innerHTML = "";
+      if (urgentCount > 0) {
+        const banner = document.createElement("p");
+        banner.className = "notice show err";
+        banner.textContent = urgentCount + " item" + (urgentCount === 1 ? "" : "s") + " flagged as a problem or incident — needs follow-up with the client or worker.";
+        el.appendChild(banner);
+      }
+      const list = document.createElement("div");
+      list.className = "list";
+      entries.slice(0, 25).forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "list-item";
+        row.style.borderLeftColor = item.urgent ? "var(--red)" : "var(--line)";
+        row.innerHTML =
+          '<div class="t">' + escapeHtml(item.formType || "Update") + " — " + escapeHtml(item.submittedBy) + "</div>" +
+          '<div class="d">' + escapeHtml(item.statusSet || "") + (item.incident ? " · " + escapeHtml(item.incident) : "") + "</div>" +
+          (item.notes ? '<div class="d" style="white-space:pre-wrap;margin-top:4px;">' + escapeHtml(item.notes) + "</div>" : "") +
+          (item.link ? '<a class="rec-link" href="' + escapeHtml(item.link) + '" target="_blank">Open photo/link →</a> ' : "") +
+          (item.jobRecordUrl ? '<a class="rec-link" href="' + escapeHtml(item.jobRecordUrl) + '" target="_blank">Open job →</a>' : "");
+        list.appendChild(row);
+      });
+      el.appendChild(list);
+    } catch (e) {
+      el.innerHTML = '<p class="notice show err">Could not reach the server.</p>';
     }
   }
 
