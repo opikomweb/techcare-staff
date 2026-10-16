@@ -74,11 +74,16 @@
   .status-chip{padding:7px 12px; border-radius:20px; background:var(--blue-wash); color:var(--blue); font-size:13px; font-weight:700;}
 
   .section h3{font-size:15px; margin:0 0 10px; font-weight:700;}
-  .list{display:flex; flex-direction:column; gap:8px;}
-  .list-item{border:1px solid var(--line); border-left:3px solid var(--line); border-radius:10px; padding:10px 12px; font-size:14px;}
-  .list-item .t{font-weight:700;}
+  .list{display:flex; flex-direction:column; gap:10px;}
+  .list-item{border:1px solid var(--line); border-left:3px solid var(--line); border-radius:10px; padding:12px 14px; font-size:14px;}
+  .list-item .t{font-weight:700; margin-bottom:4px;}
   .list-item .d{color:var(--ink-soft); margin-top:2px;}
-  .list-item a.rec-link{display:inline-block; margin-top:6px; font-size:12.5px; font-weight:700; color:var(--blue); text-decoration:none;}
+  .list-item .ctx{color:var(--ink-soft); font-size:12.5px; margin:-2px 0 6px;}
+  .list-item .gap-label{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin:8px 0 3px;}
+  .list-item .gap-label:first-of-type{margin-top:0;}
+  .list-item .gap-list{margin:0 0 2px; padding-left:18px; color:var(--ink-soft); font-size:13.5px; line-height:1.6;}
+  .list-item .gap-list li{margin:0 0 2px;}
+  .list-item a.rec-link{display:inline-block; margin-top:8px; font-size:12.5px; font-weight:700; color:var(--blue); text-decoration:none;}
   .list-item a.rec-link:hover{text-decoration:underline;}
   .empty{color:var(--ink-soft); font-size:14px; padding:6px 0;}
 
@@ -426,6 +431,30 @@
         return item.recordUrl ? '<a class="rec-link" href="' + escapeHtml(item.recordUrl) + '" target="_blank">Open record →</a>' : "";
       }
 
+      // Airtable's gap/blocker fields come back as one run-on string like
+      // "CLIENT: • Service agreement not signed • Privacy consent not
+      // signed WORKER: • Code of conduct not signed ...". Split it into
+      // labeled, de-duplicated bullet lists instead of dumping it as one
+      // unbroken line of text.
+      function formatDetail(text) {
+        if (!text) return "";
+        if (text.indexOf("•") === -1) return '<div class="d">' + escapeHtml(text) + "</div>";
+        const labelRe = /\b([A-Z][A-Z ]{2,}):\s*/g;
+        const labelMatches = [...text.matchAll(labelRe)];
+        const groups = labelMatches.length === 0
+          ? [{ label: null, body: text }]
+          : labelMatches.map((m, idx) => ({
+              label: m[1].trim(),
+              body: text.slice(m.index + m[0].length, idx + 1 < labelMatches.length ? labelMatches[idx + 1].index : text.length),
+            }));
+        return groups.map(({ label, body }) => {
+          const items = [...new Set(body.split("•").map((s) => s.trim()).filter(Boolean))];
+          if (items.length === 0) return "";
+          const list = '<ul class="gap-list">' + items.map((i) => "<li>" + escapeHtml(i) + "</li>").join("") + "</ul>";
+          return (label ? '<div class="gap-label">' + escapeHtml(label) + "</div>" : "") + list;
+        }).join("");
+      }
+
       function listSection(id, title, items, render) {
         const sec = document.createElement("div");
         sec.className = "card section";
@@ -451,10 +480,20 @@
 
       detailsEl.innerHTML = "";
       detailsEl.appendChild((() => { const c = document.createElement("div"); c.className = "card"; c.id = "jobsByStatusCard"; c.appendChild(statusRow); const h = document.createElement("h3"); h.textContent = "Jobs by status"; h.style.marginTop = "0"; c.insertBefore(h, statusRow); return c; })());
-      detailsEl.appendChild(listSection("needsAttentionCard", "Needs attention", data.needsAttention, (i) => '<div class="t">' + escapeHtml(i.job) + "</div><div class=\"d\">" + escapeHtml(i.reason) + (i.client ? " · " + escapeHtml(i.client) : "") + "</div>"));
-      detailsEl.appendChild(listSection("workersNotReadyCard", "Workers not ready", data.workersNotReady, (i) => '<div class="t">' + escapeHtml(i.name) + "</div><div class=\"d\">" + escapeHtml(i.gaps) + "</div>"));
-      detailsEl.appendChild(listSection("expiringSoonCard", "Insurance / WCB expiring within 30 days", data.expiringSoon, (i) => '<div class="t">' + escapeHtml(i.name) + "</div><div class=\"d\">" + escapeHtml(i.what) + " expires " + escapeHtml(i.expires) + "</div>"));
-      detailsEl.appendChild(listSection("clientsUnsignedCard", "Clients with unsigned forms", data.clientsUnsigned, (i) => '<div class="t">' + escapeHtml(i.name) + "</div><div class=\"d\">" + escapeHtml(i.gaps) + "</div>"));
+      detailsEl.appendChild(listSection("needsAttentionCard", "Needs attention", data.needsAttention, (i) =>
+        '<div class="t">' + escapeHtml(i.job) + "</div>" +
+        (i.client ? '<div class="ctx">Client: ' + escapeHtml(i.client) + "</div>" : "") +
+        formatDetail(i.reason)
+      ));
+      detailsEl.appendChild(listSection("workersNotReadyCard", "Workers not ready", data.workersNotReady, (i) =>
+        '<div class="t">' + escapeHtml(i.name) + "</div>" + formatDetail(i.gaps)
+      ));
+      detailsEl.appendChild(listSection("expiringSoonCard", "Insurance / WCB expiring within 30 days", data.expiringSoon, (i) =>
+        '<div class="t">' + escapeHtml(i.name) + "</div><div class=\"d\">" + escapeHtml(i.what) + " expires " + escapeHtml(i.expires) + "</div>"
+      ));
+      detailsEl.appendChild(listSection("clientsUnsignedCard", "Clients with unsigned forms", data.clientsUnsigned, (i) =>
+        '<div class="t">' + escapeHtml(i.name) + "</div>" + formatDetail(i.gaps)
+      ));
       loadAuditLog(detailsEl);
     } catch (e) {
       tilesEl.innerHTML = '<p class="notice show err">Could not reach the server.</p>';
