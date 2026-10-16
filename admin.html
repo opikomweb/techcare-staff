@@ -142,6 +142,7 @@
         <button class="tab" data-tab="jobs">Jobs</button>
         <button class="tab" data-tab="people">Staff &amp; workers</button>
         <button class="tab" data-tab="resources">Resources</button>
+        <button class="tab" data-tab="announcements">Announcements</button>
         <button class="tab" data-tab="invoices">Invoices</button>
       </div>
 
@@ -227,6 +228,26 @@
         <div class="card">
           <h3 style="margin-top:0;">All resources</h3>
           <div id="resourcesTable" class="loading"><span class="spinner"></span> Loading resources…</div>
+        </div>
+      </div>
+
+      <div id="tab-announcements" class="screen">
+        <div class="card">
+          <h3 style="margin-top:0;">Post an announcement</h3>
+          <div class="inline-form">
+            <div><label>Title</label><input id="annTitle" placeholder="e.g. New safety rule for mounting jobs"></div>
+            <div><label>Project</label><select id="annProject"><option value="">Everyone (all projects)</option></select></div>
+            <div class="checkbox-field"><input type="checkbox" id="annPinned"><label style="margin:0;">Pin to top</label></div>
+            <div class="checkbox-field"><input type="checkbox" id="annEmailNow"><label style="margin:0;">Also email it now</label></div>
+          </div>
+          <label for="annBody" style="margin-top:4px;">Message</label>
+          <textarea id="annBody" rows="4" placeholder="What staff need to know…" style="width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:9px; font-size:15px; margin-bottom:12px; background:#fbfcfe; color:var(--ink); font-family:inherit; resize:vertical;"></textarea>
+          <button id="annSubmit">Post announcement</button>
+          <div id="annFormMsg" class="notice"></div>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0;">All announcements</h3>
+          <div id="announcementsList" class="loading"><span class="spinner"></span> Loading announcements…</div>
         </div>
       </div>
 
@@ -349,6 +370,7 @@
       loadJobsTab();
       loadPeople();
       loadResources();
+      loadAnnouncements();
       loadInvoicesMeta();
       loadInvoices();
     } catch (e) {
@@ -359,7 +381,7 @@
 
   function switchTab(key) {
     document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x.dataset.tab === key));
-    ["overview", "jobs", "people", "resources", "invoices"].forEach((k) => {
+    ["overview", "jobs", "people", "resources", "announcements", "invoices"].forEach((k) => {
       const el = document.getElementById("tab-" + k);
       if (k === key) show(el); else hide(el);
     });
@@ -405,6 +427,7 @@
         [data.workersNotReady ? data.workersNotReady.length : 0, "Workers not ready", (data.workersNotReady||[]).length ? "warn" : "ok", "workersNotReadyCard"],
         [data.expiringSoon ? data.expiringSoon.length : 0, "Insurance/WCB expiring (30d)", (data.expiringSoon||[]).length ? "warn" : "ok", "expiringSoonCard"],
         [data.clientsUnsigned ? data.clientsUnsigned.length : 0, "Clients with unsigned forms", (data.clientsUnsigned||[]).length ? "warn" : "ok", "clientsUnsignedCard"],
+        [data.resourcesNotAcknowledged ? data.resourcesNotAcknowledged.length : 0, "Staff with unread required docs", (data.resourcesNotAcknowledged||[]).length ? "warn" : "ok", "resourcesNotAckedCard"],
         ["$" + (data.moneyOwed || 0).toFixed(0), "Invoiced, not yet paid", "", "GOTO_INVOICES"],
         [data.signaturesThisWeek || 0, "Signatures this week", "ok", "auditLogCard"],
       ];
@@ -494,6 +517,9 @@
         '<div class="t">' + escapeHtml(i.name) + "</div><div class=\"d\">" + escapeHtml(i.what) + " expires " + escapeHtml(i.expires) + "</div>"
       ));
       detailsEl.appendChild(listSection("clientsUnsignedCard", "Clients with unsigned forms", data.clientsUnsigned, (i) =>
+        '<div class="t">' + escapeHtml(i.name) + "</div>" + formatDetail(i.gaps)
+      ));
+      detailsEl.appendChild(listSection("resourcesNotAckedCard", "Staff with unread required docs", data.resourcesNotAcknowledged, (i) =>
         '<div class="t">' + escapeHtml(i.name) + "</div>" + formatDetail(i.gaps)
       ));
       loadAuditLog(detailsEl);
@@ -777,6 +803,7 @@
       fillSelect("roleFormPerson", peopleCache.map(p => [p.id, p.full_name + " (" + p.email + ")"]));
       fillSelect("roleFormProject", projectsCache.map(p => [p.id, p.name]));
       fillSelect("resProject", [["", "All projects"]].concat(projectsCache.map(p => [p.id, p.name])));
+      fillSelect("annProject", [["", "Everyone (all projects)"]].concat(projectsCache.map(p => [p.id, p.name])));
 
       renderPeopleTable();
     } catch (e) {
@@ -937,6 +964,103 @@
       document.getElementById("resRequired").checked = false;
       loadResources();
     } catch (e) { setNotice(msg, "Could not reach the server.", "err"); }
+  });
+
+  // ---------- Announcements ----------
+  let announcementsCache = [];
+
+  async function loadAnnouncements() {
+    const el = document.getElementById("announcementsList");
+    try {
+      const res = await authedFetch("/api/admin/announcements");
+      const data = await res.json();
+      if (!res.ok) { el.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load announcements.") + "</p>"; return; }
+      announcementsCache = data.announcements || [];
+      renderAnnouncementsList();
+    } catch (e) {
+      el.innerHTML = '<p class="notice show err">Could not reach the server.</p>';
+    }
+  }
+
+  function renderAnnouncementsList() {
+    const el = document.getElementById("announcementsList");
+    if (announcementsCache.length === 0) { el.innerHTML = '<p class="empty">No announcements yet — post one above.</p>'; return; }
+    const list = document.createElement("div");
+    list.className = "list";
+    announcementsCache.forEach((a) => {
+      const row = document.createElement("div");
+      row.className = "list-item";
+      if (a.pinned) row.style.borderLeftColor = "var(--blue)";
+      const when = new Date(a.created_at).toLocaleString();
+      row.innerHTML =
+        '<div class="t">' + (a.pinned ? "📌 " : "") + escapeHtml(a.title) + "</div>" +
+        '<div class="ctx">' + escapeHtml(a.project_slug || "Everyone") + " · " + escapeHtml(when) + (a.created_by_name ? " · " + escapeHtml(a.created_by_name) : "") + "</div>" +
+        '<div class="d" style="white-space:pre-wrap;margin-top:4px;">' + escapeHtml(a.body) + "</div>" +
+        '<div class="row-actions" style="margin-top:10px;">' +
+          '<button type="button" class="small secondary" data-toggle-pin="' + a.id + '">' + (a.pinned ? "Unpin" : "Pin to top") + "</button>" +
+          '<button type="button" class="small danger" data-delete-ann="' + a.id + '">Remove</button>' +
+        "</div>";
+      list.appendChild(row);
+    });
+    el.innerHTML = "";
+    el.appendChild(list);
+
+    el.querySelectorAll("[data-toggle-pin]").forEach((btn) => btn.addEventListener("click", async () => {
+      const a = announcementsCache.find((x) => x.id === btn.dataset.togglePin);
+      try {
+        const res = await authedFetch("/api/admin/announcements", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: a.id, pinned: !a.pinned }) });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || "Could not update."); return; }
+        loadAnnouncements();
+      } catch (e) { alert("Could not reach the server."); }
+    }));
+
+    el.querySelectorAll("[data-delete-ann]").forEach((btn) => btn.addEventListener("click", async () => {
+      if (!confirm("Remove this announcement? Staff will no longer see it.")) return;
+      try {
+        const res = await authedFetch("/api/admin/announcements?id=" + encodeURIComponent(btn.dataset.deleteAnn), { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || "Could not remove."); return; }
+        loadAnnouncements();
+      } catch (e) { alert("Could not reach the server."); }
+    }));
+  }
+
+  document.getElementById("annSubmit").addEventListener("click", async () => {
+    const title = document.getElementById("annTitle").value.trim();
+    const bodyText = document.getElementById("annBody").value.trim();
+    const project_id = document.getElementById("annProject").value || null;
+    const pinned = document.getElementById("annPinned").checked;
+    const emailNow = document.getElementById("annEmailNow").checked;
+    const msg = document.getElementById("annFormMsg");
+    if (!title || !bodyText) { setNotice(msg, "Give it a title and a message.", "err"); return; }
+    const btn = document.getElementById("annSubmit");
+    btn.disabled = true;
+    setNotice(msg, "Posting…", "info");
+    try {
+      const res = await authedFetch("/api/admin/announcements", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, body: bodyText, project_id, pinned, emailNow }),
+      });
+      const data = await res.json();
+      btn.disabled = false;
+      if (!res.ok) { setNotice(msg, data.error || "Could not post.", "err"); return; }
+      let note = "Posted.";
+      if (data.email) {
+        note = data.email.configured
+          ? "Posted and emailed " + data.email.sent + " of " + data.email.attempted + " staff."
+          : "Posted. Email isn't connected yet, so it wasn't emailed — contact WilGlobo support to finish that setup.";
+      }
+      setNotice(msg, note, "ok");
+      document.getElementById("annTitle").value = "";
+      document.getElementById("annBody").value = "";
+      document.getElementById("annPinned").checked = false;
+      document.getElementById("annEmailNow").checked = false;
+      loadAnnouncements();
+    } catch (e) {
+      btn.disabled = false;
+      setNotice(msg, "Could not reach the server.", "err");
+    }
   });
 
   // ---------- Invoices ----------

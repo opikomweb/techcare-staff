@@ -12,6 +12,7 @@
 // this base) as a Vercel env var. Without it, this endpoint returns a
 // clear "not configured" error instead of fabricating numbers.
 const { requireCoreStaff } = require("./_requireCoreStaff");
+const { withStaffAuth } = require("../_staffAuth");
 
 const BASE_ID = "appBiAKY6ivoImcaQ";
 const TABLES = {
@@ -135,6 +136,46 @@ module.exports = async (req, res) => {
       return !Number.isNaN(t) && t >= weekAgo;
     }).length;
 
+    // Required staff.resources (Postgres) documents nobody has acknowledged
+    // yet. Separate from the Airtable-driven "Workers not ready" list
+    // above (which tracks the signed/versioned compliance docs) — this
+    // tracks the newer admin-managed resource list's own required flag.
+    // A failure here never blanks the rest of the Overview tab.
+    let resourcesNotAcknowledged = [];
+    try {
+      resourcesNotAcknowledged = await withStaffAuth(gate.uid, async (client) => {
+        const { rows } = await client.query(`
+          with candidates as (
+            select p.id as person_id, p.full_name, r.id as resource_id, r.title
+              from staff.resources r
+              join staff.people p on p.active
+              left join staff.project_roles pr
+                on pr.person_id = p.id and pr.project_id = r.project_id and pr.active
+             where r.required
+               and (r.project_id is null or pr.id is not null)
+               and (
+                 r.engagement_tracks is null or array_length(r.engagement_tracks, 1) is null
+                 or r.project_id is null
+                 or pr.engagement_track = any(r.engagement_tracks)
+               )
+          )
+          select c.full_name, array_agg(c.title order by c.title) as missing_titles
+            from candidates c
+            left join staff.resource_acknowledgements ack
+              on ack.resource_id = c.resource_id and ack.person_id = c.person_id
+           where ack.id is null
+           group by c.person_id, c.full_name
+           order by c.full_name
+        `);
+        return rows.map((r) => ({
+          name: r.full_name || "Unnamed worker",
+          gaps: r.missing_titles.join(" • "),
+        }));
+      });
+    } catch (e) {
+      console.error("api/admin/ops-summary resourcesNotAcknowledged error:", e);
+    }
+
     return res.status(200).json({
       jobsByStatus,
       openForClaim,
@@ -142,6 +183,7 @@ module.exports = async (req, res) => {
       workersNotReady,
       expiringSoon,
       clientsUnsigned,
+      resourcesNotAcknowledged,
       signaturesThisWeek,
       moneyOwed,
       totals: { jobs: jobs.length, workers: workers.length, clients: clients.length },

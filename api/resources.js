@@ -111,14 +111,17 @@ const CATEGORY_CODE = {
   other: "DOCUMENT",
 };
 
-async function loadPostgresResources(uid, projectSlug, roles) {
+async function loadPostgresResources(uid, personId, projectSlug, roles) {
   return withStaffAuth(uid, async (client) => {
     const { rows } = await client.query(
-      `select r.id, r.category, r.title, r.description, r.url, r.required, r.engagement_tracks
+      `select r.id, r.category, r.title, r.description, r.url, r.required, r.engagement_tracks,
+              ack.acknowledged_at
          from staff.resources r
          left join staff.projects proj on proj.id = r.project_id
+         left join staff.resource_acknowledgements ack
+           on ack.resource_id = r.id and ack.person_id = $2
         where r.project_id is null or proj.slug = $1`,
-      [projectSlug]
+      [projectSlug, personId]
     );
     const myRole = (roles || []).find((rr) => rr.slug === projectSlug && rr.role_active);
     const myTrack = myRole ? myRole.engagement_track : null;
@@ -126,6 +129,7 @@ async function loadPostgresResources(uid, projectSlug, roles) {
       .filter((r) => !r.engagement_tracks || r.engagement_tracks.length === 0 || (myTrack && r.engagement_tracks.includes(myTrack)))
       .map((r) => ({
         id: "pg_" + r.id,
+        resourceId: r.id,
         code: CATEGORY_CODE[r.category] || "DOCUMENT",
         title: r.title,
         version: "",
@@ -133,7 +137,9 @@ async function loadPostgresResources(uid, projectSlug, roles) {
         url: r.url,
         description: r.description || null,
         shelf: CATEGORY_SHELF[r.category] || "Policies",
-        badge: r.required ? "needs_signature" : "read_only",
+        badge: !r.required ? "read_only" : r.acknowledged_at ? "signed" : "needs_signature",
+        acknowledgeable: !!r.required,
+        acknowledgedAt: r.acknowledged_at || null,
       }));
   });
 }
@@ -211,7 +217,7 @@ module.exports = async (req, res) => {
 
     let pgDocs = [];
     try {
-      pgDocs = projectSlug ? await loadPostgresResources(uid, projectSlug, roles) : [];
+      pgDocs = projectSlug ? await loadPostgresResources(uid, person.id, projectSlug, roles) : [];
     } catch (e) {
       console.error("api/resources staff.resources error:", e);
     }

@@ -167,6 +167,13 @@
   .shift .meta{color:var(--ink-soft); font-size:13.5px; margin-bottom:10px;}
   .shift .meta div{margin-bottom:2px;}
 
+  /* announcements */
+  .announcement{border:1.5px solid var(--line); border-left:4px solid var(--blue); border-radius:12px; padding:14px 16px; margin-bottom:10px; background:#fff;}
+  .announcement.pinned{border-left-color:#b4710a; background:#fffaf2;}
+  .announcement .title{font-weight:700; font-size:15.5px; margin-bottom:3px;}
+  .announcement .meta{color:var(--ink-soft); font-size:12.5px; margin-bottom:8px;}
+  .announcement .body{font-size:14.5px; line-height:1.55; white-space:pre-wrap;}
+
   /* resources bookshelf */
   .res-toolbar{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
   .res-toolbar input[type="search"]{flex:1 1 180px; margin-bottom:0;}
@@ -298,6 +305,12 @@
       <div id="tab-resources" class="screen">
         <div id="resourcesCard" class="card">
           <div class="loading"><span class="spinner"></span> Loading resources…</div>
+        </div>
+      </div>
+
+      <div id="tab-news" class="screen">
+        <div id="newsCard" class="card">
+          <div class="loading"><span class="spinner"></span> Loading announcements…</div>
         </div>
       </div>
     </div>
@@ -480,8 +493,8 @@
   function renderProjectTabs(project) {
     const isTechCare = project.slug === "techcare";
     const tabs = isTechCare
-      ? [["jobs", "My jobs"], ["shifts", "Open shifts"], ["info", "My info"], ["resources", "Resources"]]
-      : [["info", "My info"], ["resources", "Resources"]];
+      ? [["jobs", "My jobs"], ["shifts", "Open shifts"], ["info", "My info"], ["resources", "Resources"], ["news", "Announcements"]]
+      : [["info", "My info"], ["resources", "Resources"], ["news", "Announcements"]];
 
     projectTabsEl.innerHTML = "";
     tabs.forEach(([key, label], i) => {
@@ -493,13 +506,13 @@
       projectTabsEl.appendChild(b);
     });
 
-    ["jobs", "shifts", "info", "resources"].forEach((k) => hide(document.getElementById("tab-" + k)));
+    ["jobs", "shifts", "info", "resources", "news"].forEach((k) => hide(document.getElementById("tab-" + k)));
     selectTab(tabs[0][0], project);
   }
 
   function selectTab(key, project) {
     [...projectTabsEl.children].forEach((b) => b.classList.toggle("active", b.dataset.tab === key));
-    ["jobs", "shifts", "info", "resources"].forEach((k) => {
+    ["jobs", "shifts", "info", "resources", "news"].forEach((k) => {
       const el = document.getElementById("tab-" + k);
       if (k === key) show(el); else hide(el);
     });
@@ -507,6 +520,7 @@
     if (key === "shifts") loadShifts();
     if (key === "info" && !infoLoaded) loadInfo();
     if (key === "resources") loadResources(project.slug);
+    if (key === "news") loadNews(project.slug);
   }
 
   // ---- Check in (native list, links out to the existing per-job form) ----
@@ -705,16 +719,47 @@
     }
   });
 
+  // ---- Announcements ----
+  async function loadNews(slug) {
+    const card = document.getElementById("newsCard");
+    card.innerHTML = '<div class="loading"><span class="spinner"></span> Loading announcements…</div>';
+    try {
+      const res = await authedFetch("/api/announcements?project=" + encodeURIComponent(slug));
+      const data = await res.json();
+      if (!res.ok) {
+        card.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load announcements.") + "</p>";
+        return;
+      }
+      const items = data.announcements || [];
+      if (items.length === 0) {
+        card.innerHTML = '<p class="notice show info">Nothing posted yet.</p>';
+        return;
+      }
+      card.innerHTML = items.map((a) => {
+        const when = new Date(a.created_at).toLocaleString();
+        return '<div class="announcement' + (a.pinned ? " pinned" : "") + '">' +
+          '<div class="title">' + (a.pinned ? "📌 " : "") + escapeHtml(a.title) + '</div>' +
+          '<div class="meta">' + escapeHtml(when) + (a.created_by_name ? " · " + escapeHtml(a.created_by_name) : "") + '</div>' +
+          '<div class="body">' + escapeHtml(a.body) + '</div>' +
+        '</div>';
+      }).join("");
+    } catch (e) {
+      card.innerHTML = '<p class="notice show err">Could not reach the server. Check your connection and refresh.</p>';
+    }
+  }
+
   // ---- Resources: the bookshelf ----
   let allResources = [];
   let resourceSearch = "";
   let resourceNeedsOnly = false;
+  let currentResourceSlug = null;
 
   const BADGE_LABEL = { signed: "Signed by you", needs_signature: "Needs your signature", read_only: "Read only" };
   const BADGE_CLASS = { signed: "signed", needs_signature: "needs", read_only: "read" };
   const BOOK_BORDER_CLASS = { signed: "badge-signed", needs_signature: "badge-needs", read_only: "badge-read" };
 
   async function loadResources(slug) {
+    currentResourceSlug = slug;
     const card = document.getElementById("resourcesCard");
     card.innerHTML = '<div class="loading"><span class="spinner"></span> Loading resources…</div>';
     try {
@@ -730,6 +775,23 @@
       renderResourceShelf(data.notice);
     } catch (e) {
       card.innerHTML = '<p class="notice show err">Could not reach the server. Check your connection and refresh.</p>';
+    }
+  }
+
+  async function acknowledgeResource(resourceId, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
+    try {
+      const res = await authedFetch("/api/resource-ack", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resourceId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { alert(data.error || "Could not save that."); if (btn) { btn.disabled = false; btn.textContent = "I've read this"; } return; }
+      if (currentResourceSlug) loadResources(currentResourceSlug);
+    } catch (e) {
+      alert("Could not reach the server.");
+      if (btn) { btn.disabled = false; btn.textContent = "I've read this"; }
     }
   }
 
@@ -800,7 +862,8 @@
               '<span class="doc-badge ' + BADGE_CLASS[r.badge] + '">' + BADGE_LABEL[r.badge] + '</span>' +
               '<div class="actions">' +
                 (r.url ? '<a href="' + r.url + '" target="_blank"><button type="button" class="small secondary">Read</button></a>' : "") +
-                (r.badge === "needs_signature" && r.url ? '<a href="' + r.url + '" target="_blank"><button type="button" class="small">Sign</button></a>' : "") +
+                (r.badge === "needs_signature" && r.url && !r.acknowledgeable ? '<a href="' + r.url + '" target="_blank"><button type="button" class="small">Sign</button></a>' : "") +
+                (r.badge === "needs_signature" && r.acknowledgeable ? '<button type="button" class="small" data-ack="' + escapeHtml(r.resourceId) + '">I’ve read this</button>' : "") +
               '</div>' +
             '</div>' +
           '</div>';
@@ -808,6 +871,7 @@
       html += "</div></div>";
     });
     body.innerHTML = html;
+    body.querySelectorAll("[data-ack]").forEach((btn) => btn.addEventListener("click", () => acknowledgeResource(btn.dataset.ack, btn)));
   }
 
   sb.auth.onAuthStateChange((_event, session) => {
