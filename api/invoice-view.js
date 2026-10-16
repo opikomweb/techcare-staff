@@ -3,7 +3,7 @@
 // The only unauthenticated read in this app. Backs the client-facing
 // /invoice/<token> page (reached via the email/SMS link) — no sign-in,
 // because clients don't have accounts. Safety comes from the token being
-// an unguessable 128-bit value and from techcare.get_invoice_by_token
+// an unguessable 128-bit value and from techcare.get_invoice_by_token_v2
 // (SECURITY DEFINER) returning only what a client should see: no phone,
 // email, address, job notes, or internal ids. Rate-limited per token and
 // per IP so a token can't be hammered or enumerated.
@@ -35,7 +35,7 @@ module.exports = async (req, res) => {
         return res.status(429).json({ error: "Too many requests — try again shortly." });
       }
 
-      const { rows } = await client.query("select * from techcare.get_invoice_by_token($1)", [token]);
+      const { rows } = await client.query("select * from techcare.get_invoice_by_token_v2($1)", [token]);
       if (rows.length === 0) {
         return res.status(404).json({ error: "We couldn't find that invoice. Check the link or contact WilGlobo TechCare." });
       }

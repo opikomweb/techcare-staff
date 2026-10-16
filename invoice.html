@@ -71,6 +71,10 @@
           return "<tr><td>" + esc(li.label) + (li.quantity > 1 ? " × " + li.quantity : "") + "</td><td>" + money(li.line_total) + "</td></tr>";
         })
         .join("");
+      if (inv.subtotal != null) {
+        rows += "<tr><td>Subtotal</td><td>" + money(inv.subtotal) + "</td></tr>";
+        rows += "<tr><td>GST (5%)</td><td>" + money(inv.gst_amount || 0) + "</td></tr>";
+      }
 
       var statusLabel = { pending: "Awaiting payment", sent: "Awaiting payment", paid: "Paid — thank you", void: "Voided" }[inv.status] || inv.status;
 

@@ -21,6 +21,11 @@ function invoiceNo() {
   return `TC-${ymd}-${suffix}`;
 }
 
+const GST_RATE = 0.05; // Alberta: GST only, no PST. WilGlobo Inc GST/HST # 790403166 RT0001.
+function round2(n) {
+  return Math.round(Number(n) * 100) / 100;
+}
+
 function invoiceHtml(inv, lineItems, shortLink) {
   const rows = lineItems
     .map(
@@ -28,6 +33,8 @@ function invoiceHtml(inv, lineItems, shortLink) {
         `<tr><td style="padding:4px 8px">${li.label}</td><td style="padding:4px 8px;text-align:right">${li.quantity}</td><td style="padding:4px 8px;text-align:right">$${Number(li.unit_amount).toFixed(2)}</td><td style="padding:4px 8px;text-align:right">$${Number(li.line_total).toFixed(2)}</td></tr>`
     )
     .join("");
+  const subtotal = inv.subtotal != null ? Number(inv.subtotal) : Number(inv.total);
+  const gst = Number(inv.gst_amount || 0);
   return `<div style="font-family:sans-serif;max-width:480px">
     <h2 style="margin:0 0 4px">WilGlobo TechCare</h2>
     <p style="color:#555;margin:0 0 16px">Invoice ${inv.invoice_no}</p>
@@ -35,9 +42,13 @@ function invoiceHtml(inv, lineItems, shortLink) {
       <thead><tr><th style="text-align:left;padding:4px 8px">Item</th><th style="padding:4px 8px">Qty</th><th style="padding:4px 8px">Rate</th><th style="padding:4px 8px">Total</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:8px">
+      <tr><td style="padding:2px 8px">Subtotal</td><td style="padding:2px 8px;text-align:right">$${subtotal.toFixed(2)}</td></tr>
+      <tr><td style="padding:2px 8px">GST (5%)</td><td style="padding:2px 8px;text-align:right">$${gst.toFixed(2)}</td></tr>
+    </table>
     <p style="font-size:18px;font-weight:bold;margin:16px 0">Total: $${Number(inv.total).toFixed(2)} CAD</p>
     <p><a href="${shortLink}" style="background:#1c5fd6;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">View & pay invoice</a></p>
-    <p style="color:#888;font-size:12px;margin-top:24px">WilGlobo TechCare · tech@wilglobo.com · (403) 679-3039</p>
+    <p style="color:#888;font-size:12px;margin-top:24px">WilGlobo TechCare · tech@wilglobo.com · (403) 679-3039 · GST# 790403166 RT0001</p>
   </div>`;
 }
 
@@ -96,7 +107,7 @@ module.exports = async (req, res) => {
 
       const invoices = await withTechcareAuth(uid, async (client) => {
         const { rows } = await client.query(
-          `select i.id, i.invoice_no, i.total, i.status, i.sent_via, i.sent_at, i.paid_at, i.created_at, i.public_token,
+          `select i.id, i.invoice_no, i.subtotal, i.gst_amount, i.total, i.payment_method, i.status, i.sent_via, i.sent_at, i.paid_at, i.created_at, i.public_token,
                   cl.full_name as client_name
              from techcare.invoices i
              join techcare.jobs j on j.id = i.job_id
@@ -192,12 +203,16 @@ module.exports = async (req, res) => {
           throw Object.assign(new Error("None of the line items matched an active service."), { httpStatus: 400 });
         }
 
-        const square = await createSquareCheckoutUrl({ amount: total, invoiceNo: invoiceNo() });
+        const subtotal = round2(total);
+        const gstAmount = round2(subtotal * GST_RATE);
+        const grandTotal = round2(subtotal + gstAmount);
+
+        const square = await createSquareCheckoutUrl({ amount: grandTotal, invoiceNo: invoiceNo() });
         const no = invoiceNo();
         const { rows: invRows } = await client.query(
-          `insert into techcare.invoices (job_id, invoice_no, total, square_checkout_url, status)
-           values ($1, $2, $3, $4, 'pending') returning *`,
-          [jobId, no, total, square.url]
+          `insert into techcare.invoices (job_id, invoice_no, subtotal, gst_amount, total, square_checkout_url, status)
+           values ($1, $2, $3, $4, $5, $6, 'pending') returning *`,
+          [jobId, no, subtotal, gstAmount, grandTotal, square.url]
         );
         const invoice = invRows[0];
 
@@ -294,17 +309,36 @@ module.exports = async (req, res) => {
     if (action === "mark_paid" || action === "void") {
       const invoiceId = body.invoiceId;
       if (!invoiceId) return res.status(400).json({ error: "Missing invoiceId." });
+
+      let paymentMethod = null;
+      if (action === "mark_paid") {
+        paymentMethod = body.paymentMethod;
+        if (!["e_transfer", "square_card", "cash"].includes(paymentMethod)) {
+          return res.status(400).json({ error: "paymentMethod must be e_transfer, square_card, or cash." });
+        }
+        // Cash is recorded here only — this endpoint is core-staff-gated
+        // (requireCoreStaff), so field contractors (index.html, no admin
+        // access) can never mark an invoice paid or record a cash amount.
+      }
+
       const newStatus = action === "mark_paid" ? "paid" : "void";
       const updated = await withTechcareAuth(uid, async (client) => {
         const { rows } = await client.query(
-          `update techcare.invoices set status = $1, paid_at = case when $1 = 'paid' then now() else paid_at end
+          `update techcare.invoices set
+             status = $1,
+             paid_at = case when $1 = 'paid' then now() else paid_at end,
+             payment_method = case when $1 = 'paid' then $3 else payment_method end
              where id = $2 returning *`,
-          [newStatus, invoiceId]
+          [newStatus, invoiceId, paymentMethod]
         );
         if (rows[0]) {
           await client.query(
             "insert into techcare.invoice_events (invoice_id, event_type, detail) values ($1, $2, $3)",
-            [invoiceId, action === "mark_paid" ? "marked_paid" : "voided", JSON.stringify({ by: actor.email })]
+            [
+              invoiceId,
+              action === "mark_paid" ? "marked_paid" : "voided",
+              JSON.stringify({ by: actor.email, ...(paymentMethod ? { paymentMethod } : {}) }),
+            ]
           );
         }
         return rows[0];

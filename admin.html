@@ -913,8 +913,11 @@
         renderLineItems();
       }));
     }
-    const total = invoiceLineItems.reduce((sum, li) => sum + li.quantity * li.amount, 0);
-    document.getElementById("invRunningTotal").textContent = invoiceLineItems.length ? "Running total: $" + total.toFixed(2) : "";
+    const subtotal = invoiceLineItems.reduce((sum, li) => sum + li.quantity * li.amount, 0);
+    const gst = Math.round(subtotal * 0.05 * 100) / 100;
+    document.getElementById("invRunningTotal").textContent = invoiceLineItems.length
+      ? "Subtotal: $" + subtotal.toFixed(2) + "  ·  GST (5%): $" + gst.toFixed(2) + "  ·  Total: $" + (subtotal + gst).toFixed(2)
+      : "";
   }
 
   document.getElementById("invAddLineItem").addEventListener("click", () => {
@@ -986,7 +989,9 @@
         "<td>" + escapeHtml(i.invoice_no) + "</td>" +
         "<td>" + escapeHtml(i.client_name) + "</td>" +
         "<td>$" + Number(i.total).toFixed(2) + "</td>" +
-        '<td><span class="pill' + (i.status === "paid" ? "" : i.status === "void" ? " off" : "") + '">' + escapeHtml(i.status) + "</span></td>" +
+        '<td><span class="pill' + (i.status === "paid" ? "" : i.status === "void" ? " off" : "") + '">' + escapeHtml(i.status) +
+          (i.status === "paid" && i.payment_method ? " · " + escapeHtml({ e_transfer: "e-Transfer", square_card: "Square card", cash: "Cash" }[i.payment_method] || i.payment_method) : "") +
+        "</span></td>" +
         "<td>" + (i.sent_via ? escapeHtml(i.sent_via) + " · " + new Date(i.sent_at).toLocaleDateString() : "—") + "</td>" +
         '<td><div class="row-actions">' +
           '<a class="small secondary" style="padding:6px 11px; font-size:12.5px; border-radius:9px; border:1.5px solid var(--line); text-decoration:none; color:var(--blue);" href="/invoice/' + encodeURIComponent(i.public_token) + '" target="_blank" rel="noopener">View</a>' +
@@ -1004,7 +1009,7 @@
     el.querySelectorAll("[data-detail]").forEach(b => b.addEventListener("click", () => showInvoiceDetail(b.dataset.detail)));
     el.querySelectorAll("[data-email]").forEach(b => b.addEventListener("click", () => sendInvoice(b.dataset.email, "send_email")));
     el.querySelectorAll("[data-sms]").forEach(b => b.addEventListener("click", () => sendInvoice(b.dataset.sms, "send_sms")));
-    el.querySelectorAll("[data-paid]").forEach(b => b.addEventListener("click", () => invoiceAction(b.dataset.paid, "mark_paid")));
+    el.querySelectorAll("[data-paid]").forEach(b => b.addEventListener("click", () => markPaid(b.dataset.paid)));
     el.querySelectorAll("[data-void]").forEach(b => b.addEventListener("click", () => {
       if (confirm("Void this invoice? This can't be undone.")) invoiceAction(b.dataset.void, "void");
     }));
@@ -1019,6 +1024,22 @@
       if (r.sent) { alert((action === "send_email" ? "Emailed." : "Texted.")); }
       else if (r.reason === "no_consent_or_phone") { alert("Not sent — this client has no phone on file or hasn't agreed to texts."); }
       else { alert((action === "send_email" ? "Email" : "Text") + " isn't set up yet" + (action === "send_email" ? "" : ", invoice wasn't texted") + ". (" + r.reason + ")"); }
+      loadInvoices();
+    } catch (e) { alert("Could not reach the server."); }
+  }
+
+  async function markPaid(id) {
+    const choice = prompt("How was this paid?\n1 = e-Transfer\n2 = Square card\n3 = Cash\n\nType 1, 2, or 3:");
+    const map = { "1": "e_transfer", "2": "square_card", "3": "cash" };
+    const paymentMethod = map[(choice || "").trim()];
+    if (!paymentMethod) { if (choice !== null) alert("Enter 1, 2, or 3."); return; }
+    try {
+      const res = await authedFetch("/api/admin/invoices", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mark_paid", invoiceId: id, paymentMethod }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || "Could not update."); return; }
       loadInvoices();
     } catch (e) { alert("Could not reach the server."); }
   }
@@ -1041,9 +1062,13 @@
       if (!res.ok) { el.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load.") + "</p>"; return; }
       const lineRows = data.lineItems.map(li => "<li>" + escapeHtml(li.label) + " × " + li.quantity + " — $" + Number(li.line_total).toFixed(2) + "</li>").join("");
       const eventRows = data.events.map(e => '<div class="list-item"><div class="t">' + escapeHtml(e.event_type) + (e.channel ? " (" + escapeHtml(e.channel) + ")" : "") + '</div><div class="d">' + new Date(e.created_at).toLocaleString() + "</div></div>").join("") || '<p class="empty">No history yet.</p>';
+      const pmLabel = { e_transfer: "e-Transfer", square_card: "Square card", cash: "Cash" }[data.invoice.payment_method] || null;
+      const subtotal = data.invoice.subtotal != null ? Number(data.invoice.subtotal) : Number(data.invoice.total);
+      const gst = Number(data.invoice.gst_amount || 0);
       el.innerHTML = '<div class="card" style="margin-top:10px;"><h3 style="margin-top:0;">' + escapeHtml(data.invoice.invoice_no) + " — " + escapeHtml(data.invoice.client_name) + '</h3>' +
         "<ul>" + lineRows + "</ul>" +
-        '<p><strong>Total: $' + Number(data.invoice.total).toFixed(2) + '</strong></p>' +
+        '<p>Subtotal: $' + subtotal.toFixed(2) + '<br>GST (5%): $' + gst.toFixed(2) + '<br><strong>Total: $' + Number(data.invoice.total).toFixed(2) + '</strong>' +
+        (pmLabel ? '<br>Paid via: ' + escapeHtml(pmLabel) : '') + '</p>' +
         '<h3>History</h3>' + eventRows + "</div>";
     } catch (e) { el.innerHTML = '<p class="notice show err">Could not reach the server.</p>'; }
   }
