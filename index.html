@@ -540,7 +540,10 @@
           "</div>" +
           (j.checkinUrl
             ? '<a class="checkin-link" href="' + escapeHtml(j.checkinUrl) + '" target="_blank">Check in / add notes &amp; photos →</a>'
-            : '<p class="notice show info" style="margin-top:8px;">Check-in link not ready for this job yet.</p>');
+            : '<p class="notice show info" style="margin-top:8px;">Check-in link not ready for this job yet.</p>') +
+          (j.consentUrl
+            ? '<a class="checkin-link" style="margin-top:8px;background:var(--green);" href="' + escapeHtml(j.consentUrl) + '" target="_blank">Show client tasks &amp; charges to confirm →</a>'
+            : "");
         list.appendChild(div);
       });
     } catch (e) {

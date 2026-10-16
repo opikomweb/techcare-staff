@@ -12,6 +12,10 @@ const { verifyAndGetContractor } = require("./_auth");
 
 const BASE_ID = "appBiAKY6ivoImcaQ";
 const JOBS_TABLE = "tblpsypl4j8CChNq1";
+// "WilGlobo Ops Core - Job Consent (Tasks and Charges)" n8n workflow —
+// client-facing task/charge sign-off page. Same Job_Key secret pattern
+// as Status_Form_URL.
+const CONSENT_BASE_URL = "https://wilglobo.app.n8n.cloud/webhook/ops-job-consent";
 
 module.exports = async (req, res) => {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed." });
@@ -34,7 +38,7 @@ module.exports = async (req, res) => {
       "filterByFormula",
       "AND({Status}!='Cancelled', {End_Time}!='', IS_AFTER({End_Time}, DATEADD(NOW(),-7,'days')), IS_BEFORE({Start_Time}, DATEADD(NOW(),30,'days')))"
     );
-    ["Job_Name", "Job_Code", "Status", "Start_Time", "End_Time", "Location", "Assigned_To", "Status_Form_URL"].forEach((f) =>
+    ["Job_Name", "Job_Code", "Status", "Start_Time", "End_Time", "Location", "Assigned_To", "Status_Form_URL", "Job_Key"].forEach((f) =>
       params.append("fields[]", f)
     );
 
@@ -60,6 +64,9 @@ module.exports = async (req, res) => {
         end: r.fields.End_Time || null,
         location: r.fields.Location || "",
         checkinUrl: r.fields.Status_Form_URL || null,
+        consentUrl: r.fields.Job_Key
+          ? `${CONSENT_BASE_URL}?job=${r.id}&c=${encodeURIComponent(r.fields.Job_Key)}`
+          : null,
       }))
       .sort((a, b) => new Date(a.start || 0) - new Date(b.start || 0));
 
