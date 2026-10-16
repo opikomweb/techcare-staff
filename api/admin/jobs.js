@@ -56,7 +56,7 @@ async function listJobs(readKey) {
   );
   [
     "Job_Code", "Job_Name", "Status", "Start_Time", "End_Time", "Location",
-    "Client_Name", "Assigned_To", "Assigned_Email", "Dispatch_Blockers",
+    "Client", "Assigned_To", "Assigned_Email", "Dispatch_Blockers",
     "Status_Form_URL", "Open_For_Claim", "Job_Key",
   ].forEach((f) => params.append("fields[]", f));
   params.set("sort[0][field]", "Start_Time");
@@ -88,12 +88,12 @@ async function listJobs(readKey) {
       start: f.Start_Time || null,
       end: f.End_Time || null,
       location: f.Location || "",
-      // Client_Name and Assigned_To are Airtable link fields — the plain
+      // Client and Assigned_To are Airtable link fields — the plain
       // REST API returns these as arrays of record IDs, not names. The
       // admin UI resolves IDs to names against the clients/workers lists
       // from /api/admin/job-form-data (loaded once, reused for every row)
       // rather than this endpoint guessing at a second lookup field name.
-      clientIds: f.Client_Name || [],
+      clientIds: f.Client || [],
       assignedTo: f.Assigned_To || [],
       assignedEmails: f.Assigned_Email || [],
       blockers: f.Dispatch_Blockers || "",
@@ -143,7 +143,7 @@ module.exports = async (req, res) => {
       const jobKey = crypto.randomBytes(16).toString("hex");
       const fields = {
         Job_Name: jobName,
-        Client_Name: [clientId],
+        Client: [clientId],
         Start_Time: new Date(startTime).toISOString(),
         End_Time: new Date(endTime).toISOString(),
         Status: "Draft",
