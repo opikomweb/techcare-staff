@@ -218,8 +218,10 @@
             <div><label>Project</label><select id="resProject"><option value="">All projects</option></select></div>
             <div><label>URL</label><input id="resUrl" placeholder="https://…"></div>
             <div class="checkbox-field"><input type="checkbox" id="resRequired"><label style="margin:0;">Required</label></div>
-            <div><button id="resAddSubmit">Add resource</button></div>
           </div>
+          <label for="resDescription" style="margin-top:10px;">Description (optional) — shown to staff above the link</label>
+          <textarea id="resDescription" rows="2" placeholder="e.g. Read this before your first shift. Covers client privacy and device-handling rules." style="width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:9px; font-size:15px; margin-bottom:12px; background:#fbfcfe; color:var(--ink); font-family:inherit; resize:vertical;"></textarea>
+          <div><button id="resAddSubmit">Add resource</button></div>
           <div id="resFormMsg" class="notice"></div>
         </div>
         <div class="card">
@@ -867,11 +869,13 @@
     let html = '<div class="table-wrap"><table><thead><tr><th>Title</th><th>Category</th><th>Project</th><th>Required</th><th></th></tr></thead><tbody>';
     resources.forEach((r) => {
       html += "<tr>" +
-        "<td>" + escapeHtml(r.title) + (r.url ? ' · <a href="' + escapeHtml(r.url) + '" target="_blank" rel="noopener">link</a>' : "") + "</td>" +
+        "<td>" + escapeHtml(r.title) + (r.url ? ' · <a href="' + escapeHtml(r.url) + '" target="_blank" rel="noopener">link</a>' : "") +
+          (r.description ? '<div class="ctx" style="margin-top:3px;">' + escapeHtml(r.description) + "</div>" : "") +
+        "</td>" +
         "<td>" + escapeHtml(r.category) + "</td>" +
         "<td>" + escapeHtml(r.project_slug || "All projects") + "</td>" +
         "<td><span class=\"pill" + (r.required ? "" : " off") + "\" data-toggle-required data-id=\"" + r.id + "\" style=\"cursor:pointer;\">" + (r.required ? "Required" : "Optional") + "</span></td>" +
-        "<td><div class=\"row-actions\"><button class=\"small danger\" data-delete=\"" + r.id + "\">Remove</button></div></td>" +
+        "<td><div class=\"row-actions\"><button class=\"small secondary\" data-edit-desc=\"" + r.id + "\">" + (r.description ? "Edit description" : "Add description") + "</button><button class=\"small danger\" data-delete=\"" + r.id + "\">Remove</button></div></td>" +
         "</tr>";
     });
     html += "</tbody></table></div>";
@@ -881,6 +885,18 @@
       const r = resources.find((x) => x.id === pill.dataset.id);
       try {
         const res = await authedFetch("/api/admin/resources", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r.id, required: !r.required }) });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || "Could not update."); return; }
+        loadResources();
+      } catch (e) { alert("Could not reach the server."); }
+    }));
+
+    el.querySelectorAll("[data-edit-desc]").forEach((btn) => btn.addEventListener("click", async () => {
+      const r = resources.find((x) => x.id === btn.dataset.editDesc);
+      const next = prompt("Description for \"" + r.title + "\" (shown to staff above the link). Leave blank to remove it:", r.description || "");
+      if (next === null) return;
+      try {
+        const res = await authedFetch("/api/admin/resources", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r.id, description: next.trim() || null }) });
         const data = await res.json();
         if (!res.ok) { alert(data.error || "Could not update."); return; }
         loadResources();
@@ -903,19 +919,21 @@
     const category = document.getElementById("resCategory").value;
     const project_id = document.getElementById("resProject").value || null;
     const url = document.getElementById("resUrl").value.trim() || null;
+    const description = document.getElementById("resDescription").value.trim() || null;
     const required = document.getElementById("resRequired").checked;
     const msg = document.getElementById("resFormMsg");
     if (!title) { setNotice(msg, "Give it a title.", "err"); return; }
     try {
       const res = await authedFetch("/api/admin/resources", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, category, project_id, url, required }),
+        body: JSON.stringify({ title, category, project_id, url, description, required }),
       });
       const data = await res.json();
       if (!res.ok) { setNotice(msg, data.error || "Could not add.", "err"); return; }
       setNotice(msg, "Added.", "ok");
       document.getElementById("resTitle").value = "";
       document.getElementById("resUrl").value = "";
+      document.getElementById("resDescription").value = "";
       document.getElementById("resRequired").checked = false;
       loadResources();
     } catch (e) { setNotice(msg, "Could not reach the server.", "err"); }
