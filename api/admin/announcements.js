@@ -11,7 +11,7 @@
 const { requireCoreStaff } = require("./_requireCoreStaff");
 const { withStaffAuth } = require("../_staffAuth");
 const { logAudit, rateLimited } = require("./_audit");
-const { sendInvoiceEmail: sendEmail } = require("./_invoiceChannels");
+const { sendInvoiceEmail: sendEmail, sendInvoiceSms: sendSms, buildAnnouncementSmsBody } = require("./_invoiceChannels");
 
 module.exports = async (req, res) => {
   try {
@@ -60,13 +60,13 @@ module.exports = async (req, res) => {
         });
 
         let recipientRows = [];
-        if (body.emailNow) {
+        if (body.emailNow || body.smsNow) {
           const { rows: people } = await client.query(
             body.project_id
-              ? `select distinct p.email, p.full_name from staff.people p
+              ? `select distinct p.email, p.phone, p.full_name from staff.people p
                    join staff.project_roles pr on pr.person_id = p.id
-                  where p.active and pr.project_id = $1 and pr.active and p.email is not null`
-              : `select email, full_name from staff.people where active and email is not null`,
+                  where p.active and pr.project_id = $1 and pr.active and (p.email is not null or p.phone is not null)`
+              : `select email, phone, full_name from staff.people where active and (email is not null or phone is not null)`,
             body.project_id ? [body.project_id] : []
           );
           recipientRows = people;
@@ -82,14 +82,26 @@ module.exports = async (req, res) => {
           <div style="white-space:pre-wrap;font-size:15px;line-height:1.5">${escapeHtml(created.body)}</div>
           <p style="color:#888;font-size:12px;margin-top:24px">WilGlobo TechCare · tech@wilglobo.com</p>
         </div>`;
+        const emailRecipients = recipients.filter((r) => r.email);
         const results = await Promise.all(
-          recipients.map((r) => sendEmail({ to: r.email, subject: "TechCare: " + created.title, html }))
+          emailRecipients.map((r) => sendEmail({ to: r.email, subject: "TechCare: " + created.title, html }))
         );
         const sentCount = results.filter((r) => r.sent).length;
-        emailResult = { attempted: recipients.length, sent: sentCount, configured: results.some((r) => r.reason !== "email_not_configured") || sentCount > 0 };
+        emailResult = { attempted: emailRecipients.length, sent: sentCount, configured: results.some((r) => r.reason !== "email_not_configured") || sentCount > 0 };
       }
 
-      return res.status(201).json({ announcement: created, email: emailResult });
+      let smsResult = null;
+      if (body.smsNow && recipients.length) {
+        const smsBody = buildAnnouncementSmsBody(created.title, created.body);
+        const smsRecipients = recipients.filter((r) => r.phone);
+        const results = await Promise.all(
+          smsRecipients.map((r) => sendSms({ to: r.phone, body: smsBody, invoiceId: null }))
+        );
+        const sentCount = results.filter((r) => r.sent).length;
+        smsResult = { attempted: smsRecipients.length, sent: sentCount, configured: results.some((r) => r.reason !== "sms_not_configured") || sentCount > 0 };
+      }
+
+      return res.status(201).json({ announcement: created, email: emailResult, sms: smsResult });
     }
 
     if (req.method === "PUT") {

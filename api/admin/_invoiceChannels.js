@@ -67,6 +67,15 @@ function buildInvoiceSmsBody(shortLink) {
   return `WilGlobo TechCare: your invoice is ready. View & pay: ${shortLink} Reply STOP to opt out.`;
 }
 
+// Builds the text sent for a staff announcement/broadcast. SMS has no
+// room for the full body, so this truncates it and points staff back to
+// the portal for the rest — same opt-out courtesy line as the invoice SMS.
+function buildAnnouncementSmsBody(title, body) {
+  const snippet = (body || "").replace(/\s+/g, " ").trim().slice(0, 100);
+  const more = (body || "").length > 100 ? "…" : "";
+  return `WilGlobo TechCare: ${title} — ${snippet}${more} See staff.wilglobo.com for the full message. Reply STOP to opt out.`;
+}
+
 // ---------------------------------------------------------------------
 // Square checkout link. Env: SQUARE_ACCESS_TOKEN, SQUARE_LOCATION_ID.
 // Returns null (no link — invoice falls back to e-transfer/contact
@@ -100,4 +109,4 @@ async function createSquareCheckoutUrl({ amount, description, invoiceNo }) {
   }
 }
 
-module.exports = { sendInvoiceEmail, sendInvoiceSms, buildInvoiceSmsBody, createSquareCheckoutUrl };
+module.exports = { sendInvoiceEmail, sendInvoiceSms, buildInvoiceSmsBody, buildAnnouncementSmsBody, createSquareCheckoutUrl };

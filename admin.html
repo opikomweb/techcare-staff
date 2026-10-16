@@ -142,6 +142,7 @@
         <button class="tab" data-tab="jobs">Jobs</button>
         <button class="tab" data-tab="people">Staff &amp; workers</button>
         <button class="tab" data-tab="resources">Resources</button>
+        <button class="tab" data-tab="time">Time &amp; leave</button>
         <button class="tab" data-tab="announcements">Announcements</button>
         <button class="tab" data-tab="invoices">Invoices</button>
       </div>
@@ -224,10 +225,32 @@
           <textarea id="resDescription" rows="2" placeholder="e.g. Read this before your first shift. Covers client privacy and device-handling rules." style="width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:9px; font-size:15px; margin-bottom:12px; background:#fbfcfe; color:var(--ink); font-family:inherit; resize:vertical;"></textarea>
           <div><button id="resAddSubmit">Add resource</button></div>
           <div id="resFormMsg" class="notice"></div>
+          <p class="notice show info" style="margin-top:10px;">Note: Airtable's Policies table is still the source of truth for documents already managed there (signed agreements, safety rules, etc). If a title here exactly matches one already in Airtable, staff see only the Airtable version — this row is hidden from their shelf to avoid a duplicate.</p>
         </div>
         <div class="card">
           <h3 style="margin-top:0;">All resources</h3>
           <div id="resourcesTable" class="loading"><span class="spinner"></span> Loading resources…</div>
+        </div>
+      </div>
+
+      <div id="tab-time" class="screen">
+        <div class="card">
+          <h3 style="margin-top:0;">Time-off requests</h3>
+          <div class="inline-form" style="margin-bottom:10px;">
+            <div><label>Filter</label>
+              <select id="timeOffFilter">
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="denied">Denied</option>
+                <option value="">All</option>
+              </select>
+            </div>
+          </div>
+          <div id="timeOffAdminList" class="loading"><span class="spinner"></span> Loading requests…</div>
+        </div>
+        <div class="card section">
+          <h3 style="margin-top:0;">Logged hours</h3>
+          <div id="timeEntriesTable" class="loading"><span class="spinner"></span> Loading time entries…</div>
         </div>
       </div>
 
@@ -239,6 +262,7 @@
             <div><label>Project</label><select id="annProject"><option value="">Everyone (all projects)</option></select></div>
             <div class="checkbox-field"><input type="checkbox" id="annPinned"><label style="margin:0;">Pin to top</label></div>
             <div class="checkbox-field"><input type="checkbox" id="annEmailNow"><label style="margin:0;">Also email it now</label></div>
+            <div class="checkbox-field"><input type="checkbox" id="annSmsNow"><label style="margin:0;">Also text it now</label></div>
           </div>
           <label for="annBody" style="margin-top:4px;">Message</label>
           <textarea id="annBody" rows="4" placeholder="What staff need to know…" style="width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:9px; font-size:15px; margin-bottom:12px; background:#fbfcfe; color:var(--ink); font-family:inherit; resize:vertical;"></textarea>
@@ -371,6 +395,8 @@
       loadPeople();
       loadResources();
       loadAnnouncements();
+      loadTimeOffAdmin();
+      loadTimeEntriesAdmin();
       loadInvoicesMeta();
       loadInvoices();
     } catch (e) {
@@ -381,7 +407,7 @@
 
   function switchTab(key) {
     document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x.dataset.tab === key));
-    ["overview", "jobs", "people", "resources", "announcements", "invoices"].forEach((k) => {
+    ["overview", "jobs", "people", "resources", "time", "announcements", "invoices"].forEach((k) => {
       const el = document.getElementById("tab-" + k);
       if (k === key) show(el); else hide(el);
     });
@@ -1032,6 +1058,7 @@
     const project_id = document.getElementById("annProject").value || null;
     const pinned = document.getElementById("annPinned").checked;
     const emailNow = document.getElementById("annEmailNow").checked;
+    const smsNow = document.getElementById("annSmsNow").checked;
     const msg = document.getElementById("annFormMsg");
     if (!title || !bodyText) { setNotice(msg, "Give it a title and a message.", "err"); return; }
     const btn = document.getElementById("annSubmit");
@@ -1040,28 +1067,130 @@
     try {
       const res = await authedFetch("/api/admin/announcements", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, body: bodyText, project_id, pinned, emailNow }),
+        body: JSON.stringify({ title, body: bodyText, project_id, pinned, emailNow, smsNow }),
       });
       const data = await res.json();
       btn.disabled = false;
       if (!res.ok) { setNotice(msg, data.error || "Could not post.", "err"); return; }
       let note = "Posted.";
+      const parts = [];
       if (data.email) {
-        note = data.email.configured
-          ? "Posted and emailed " + data.email.sent + " of " + data.email.attempted + " staff."
-          : "Posted. Email isn't connected yet, so it wasn't emailed — contact WilGlobo support to finish that setup.";
+        parts.push(data.email.configured
+          ? "emailed " + data.email.sent + " of " + data.email.attempted
+          : "email isn't connected yet");
       }
+      if (data.sms) {
+        parts.push(data.sms.configured
+          ? "texted " + data.sms.sent + " of " + data.sms.attempted
+          : "texting isn't connected yet");
+      }
+      if (parts.length) note = "Posted — " + parts.join("; ") + ".";
       setNotice(msg, note, "ok");
       document.getElementById("annTitle").value = "";
       document.getElementById("annBody").value = "";
       document.getElementById("annPinned").checked = false;
       document.getElementById("annEmailNow").checked = false;
+      document.getElementById("annSmsNow").checked = false;
       loadAnnouncements();
     } catch (e) {
       btn.disabled = false;
       setNotice(msg, "Could not reach the server.", "err");
     }
   });
+
+  // ---------- Time & leave ----------
+  async function loadTimeOffAdmin() {
+    const el = document.getElementById("timeOffAdminList");
+    const status = document.getElementById("timeOffFilter").value;
+    el.innerHTML = '<div class="loading"><span class="spinner"></span> Loading requests…</div>';
+    try {
+      const res = await authedFetch("/api/admin/time-off" + (status ? "?status=" + encodeURIComponent(status) : ""));
+      const data = await res.json();
+      if (!res.ok) { el.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load requests.") + "</p>"; return; }
+      const reqs = data.requests || [];
+      if (reqs.length === 0) { el.innerHTML = '<p class="empty">No requests.</p>'; return; }
+      const list = document.createElement("div");
+      list.className = "list";
+      reqs.forEach((r) => {
+        const row = document.createElement("div");
+        row.className = "list-item";
+        row.innerHTML =
+          '<div class="t">' + escapeHtml(r.full_name) + " — " + escapeHtml(r.start_date) + " to " + escapeHtml(r.end_date) + "</div>" +
+          '<div class="ctx">' + escapeHtml(r.status) + (r.reason ? " · " + escapeHtml(r.reason) : "") +
+            (r.decided_by_name ? " · decided by " + escapeHtml(r.decided_by_name) : "") + "</div>" +
+          (r.status === "pending"
+            ? '<div class="row-actions" style="margin-top:10px;">' +
+                '<button type="button" class="small" data-approve="' + r.id + '">Approve</button>' +
+                '<button type="button" class="small danger" data-deny="' + r.id + '">Deny</button>' +
+              "</div>"
+            : "");
+        list.appendChild(row);
+      });
+      el.innerHTML = "";
+      el.appendChild(list);
+      el.querySelectorAll("[data-approve]").forEach((btn) => btn.addEventListener("click", () => decideTimeOff(btn.dataset.approve, "approved")));
+      el.querySelectorAll("[data-deny]").forEach((btn) => btn.addEventListener("click", () => decideTimeOff(btn.dataset.deny, "denied")));
+    } catch (e) {
+      el.innerHTML = '<p class="notice show err">Could not reach the server.</p>';
+    }
+  }
+
+  async function decideTimeOff(id, status) {
+    const decisionNote = status === "denied" ? (prompt("Optional note for the denial:") || "") : "";
+    try {
+      const res = await authedFetch("/api/admin/time-off", {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status, decisionNote: decisionNote || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || "Could not update."); return; }
+      loadTimeOffAdmin();
+    } catch (e) { alert("Could not reach the server."); }
+  }
+
+  document.getElementById("timeOffFilter").addEventListener("change", loadTimeOffAdmin);
+
+  async function loadTimeEntriesAdmin() {
+    const el = document.getElementById("timeEntriesTable");
+    el.innerHTML = '<div class="loading"><span class="spinner"></span> Loading time entries…</div>';
+    try {
+      const res = await authedFetch("/api/admin/time-entries");
+      const data = await res.json();
+      if (!res.ok) { el.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load time entries.") + "</p>"; return; }
+      const entries = data.entries || [];
+      if (entries.length === 0) { el.innerHTML = '<p class="empty">No time entries yet.</p>'; return; }
+      const list = document.createElement("div");
+      list.className = "list";
+      entries.forEach((t) => {
+        const row = document.createElement("div");
+        row.className = "list-item";
+        const hours = Number(t.hours || 0).toFixed(1);
+        row.innerHTML =
+          '<div class="t">' + escapeHtml(t.full_name) + " — " + hours + " hrs" + (t.clock_out ? "" : " (in progress)") + "</div>" +
+          '<div class="ctx">' + escapeHtml(new Date(t.clock_in).toLocaleString()) +
+            (t.clock_out ? " – " + escapeHtml(new Date(t.clock_out).toLocaleString()) : "") +
+            (t.job_ref ? " · " + escapeHtml(t.job_ref) : "") + "</div>" +
+          (t.notes ? '<div class="d">' + escapeHtml(t.notes) + "</div>" : "") +
+          '<div class="row-actions" style="margin-top:10px;">' +
+            '<button type="button" class="small danger" data-delete-entry="' + t.id + '">Remove</button>' +
+          "</div>";
+        list.appendChild(row);
+      });
+      el.innerHTML = "";
+      el.appendChild(list);
+      el.querySelectorAll("[data-delete-entry]").forEach((btn) => btn.addEventListener("click", async () => {
+        if (!confirm("Remove this time entry? This can't be undone.")) return;
+        try {
+          const res = await authedFetch("/api/admin/time-entries?id=" + encodeURIComponent(btn.dataset.deleteEntry), { method: "DELETE" });
+          const data = await res.json();
+          if (!res.ok) { alert(data.error || "Could not remove."); return; }
+          loadTimeEntriesAdmin();
+        } catch (e) { alert("Could not reach the server."); }
+      }));
+    } catch (e) {
+      el.innerHTML = '<p class="notice show err">Could not reach the server.</p>';
+    }
+  }
 
   // ---------- Invoices ----------
   let serviceItemsCache = [];

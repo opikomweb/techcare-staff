@@ -302,6 +302,37 @@
         </div>
       </div>
 
+      <div id="tab-time" class="screen">
+        <div class="card">
+          <h3 style="margin-top:0;">Time clock</h3>
+          <div id="clockStatus" class="notice show info">Loading…</div>
+          <button id="clockBtn" class="full" type="button" style="margin-top:10px;">…</button>
+          <p class="notice" id="clockMsg"></p>
+          <div id="clockRecent"></div>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0;">Request time off</h3>
+          <form id="timeOffForm">
+            <div class="row2">
+              <div>
+                <label for="toStart">Start date</label>
+                <input id="toStart" type="date" required>
+              </div>
+              <div>
+                <label for="toEnd">End date</label>
+                <input id="toEnd" type="date" required>
+              </div>
+            </div>
+            <label for="toReason">Reason (optional)</label>
+            <input id="toReason" placeholder="e.g. Family event">
+            <button type="submit" class="full">Submit request</button>
+            <p class="notice" id="timeOffMsg"></p>
+          </form>
+          <h3>Your requests</h3>
+          <div id="timeOffList"><div class="loading"><span class="spinner"></span> Loading…</div></div>
+        </div>
+      </div>
+
       <div id="tab-resources" class="screen">
         <div id="resourcesCard" class="card">
           <div class="loading"><span class="spinner"></span> Loading resources…</div>
@@ -493,8 +524,8 @@
   function renderProjectTabs(project) {
     const isTechCare = project.slug === "techcare";
     const tabs = isTechCare
-      ? [["jobs", "My jobs"], ["shifts", "Open shifts"], ["info", "My info"], ["resources", "Resources"], ["news", "Announcements"]]
-      : [["info", "My info"], ["resources", "Resources"], ["news", "Announcements"]];
+      ? [["jobs", "My jobs"], ["shifts", "Open shifts"], ["info", "My info"], ["time", "Time & leave"], ["resources", "Resources"], ["news", "Announcements"]]
+      : [["info", "My info"], ["time", "Time & leave"], ["resources", "Resources"], ["news", "Announcements"]];
 
     projectTabsEl.innerHTML = "";
     tabs.forEach(([key, label], i) => {
@@ -506,19 +537,20 @@
       projectTabsEl.appendChild(b);
     });
 
-    ["jobs", "shifts", "info", "resources", "news"].forEach((k) => hide(document.getElementById("tab-" + k)));
+    ["jobs", "shifts", "info", "time", "resources", "news"].forEach((k) => hide(document.getElementById("tab-" + k)));
     selectTab(tabs[0][0], project);
   }
 
   function selectTab(key, project) {
     [...projectTabsEl.children].forEach((b) => b.classList.toggle("active", b.dataset.tab === key));
-    ["jobs", "shifts", "info", "resources", "news"].forEach((k) => {
+    ["jobs", "shifts", "info", "time", "resources", "news"].forEach((k) => {
       const el = document.getElementById("tab-" + k);
       if (k === key) show(el); else hide(el);
     });
     if (key === "jobs") { loadCheckins(); loadJobs(); }
     if (key === "shifts") loadShifts();
     if (key === "info" && !infoLoaded) loadInfo();
+    if (key === "time") { loadClock(); loadTimeOff(); }
     if (key === "resources") loadResources(project.slug);
     if (key === "news") loadNews(project.slug);
   }
@@ -714,6 +746,119 @@
       const data = await res.json();
       if (!res.ok) { setNotice(msg, data.error || "Could not save.", "err"); return; }
       setNotice(msg, "Saved.", "ok");
+    } catch (e) {
+      setNotice(msg, "Could not reach the server.", "err");
+    }
+  });
+
+  // ---- Time clock ----
+  let clockOpenEntry = null;
+  async function loadClock() {
+    const statusEl = document.getElementById("clockStatus");
+    const btn = document.getElementById("clockBtn");
+    const recentEl = document.getElementById("clockRecent");
+    statusEl.textContent = "Loading…";
+    try {
+      const res = await authedFetch("/api/time-clock");
+      const data = await res.json();
+      if (!res.ok) {
+        statusEl.className = "notice show err";
+        statusEl.textContent = data.error || "Could not load your time clock.";
+        return;
+      }
+      clockOpenEntry = data.open;
+      if (clockOpenEntry) {
+        statusEl.className = "notice show ok";
+        statusEl.textContent = "Clocked in since " + new Date(clockOpenEntry.clock_in).toLocaleString();
+        btn.textContent = "Clock out";
+      } else {
+        statusEl.className = "notice show info";
+        statusEl.textContent = "You're not clocked in.";
+        btn.textContent = "Clock in";
+      }
+      const recent = data.recent || [];
+      recentEl.innerHTML = recent.length === 0 ? "" : "<h3>Recent</h3>" + recent.map((r) => {
+        const hours = r.clock_out ? ((new Date(r.clock_out) - new Date(r.clock_in)) / 3600000).toFixed(1) + " hrs" : "in progress";
+        return '<div class="shift"><div class="meta"><div>' + escapeHtml(new Date(r.clock_in).toLocaleString()) +
+          (r.clock_out ? " – " + escapeHtml(new Date(r.clock_out).toLocaleTimeString()) : "") +
+          '</div><div>' + hours + '</div>' +
+          (r.notes ? '<div>' + escapeHtml(r.notes) + '</div>' : '') + '</div></div>';
+      }).join("");
+    } catch (e) {
+      statusEl.className = "notice show err";
+      statusEl.textContent = "Could not reach the server.";
+    }
+  }
+
+  document.getElementById("clockBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("clockBtn");
+    const msg = document.getElementById("clockMsg");
+    btn.disabled = true;
+    try {
+      const res = await authedFetch("/api/time-clock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: clockOpenEntry ? "clock_out" : "clock_in" }),
+      });
+      const data = await res.json();
+      btn.disabled = false;
+      if (!res.ok) { setNotice(msg, data.error || "Could not update your time clock.", "err"); return; }
+      setNotice(msg, clockOpenEntry ? "Clocked out." : "Clocked in.", "ok");
+      loadClock();
+    } catch (e) {
+      btn.disabled = false;
+      setNotice(msg, "Could not reach the server.", "err");
+    }
+  });
+
+  // ---- Time off requests ----
+  async function loadTimeOff() {
+    const list = document.getElementById("timeOffList");
+    list.innerHTML = '<div class="loading"><span class="spinner"></span> Loading…</div>';
+    try {
+      const res = await authedFetch("/api/time-off");
+      const data = await res.json();
+      if (!res.ok) {
+        list.innerHTML = '<p class="notice show err">' + escapeHtml(data.error || "Could not load your requests.") + "</p>";
+        return;
+      }
+      const reqs = data.requests || [];
+      if (reqs.length === 0) {
+        list.innerHTML = '<p class="notice show info">No requests yet.</p>';
+        return;
+      }
+      const STATUS_LABEL = { pending: "Pending", approved: "Approved", denied: "Denied" };
+      list.innerHTML = reqs.map((r) => {
+        return '<div class="shift"><div class="title">' + escapeHtml(r.start_date) + " to " + escapeHtml(r.end_date) +
+          '</div><div class="meta"><div>' + (STATUS_LABEL[r.status] || r.status) + '</div>' +
+          (r.reason ? '<div>' + escapeHtml(r.reason) + '</div>' : '') +
+          (r.decision_note ? '<div>Note: ' + escapeHtml(r.decision_note) + '</div>' : '') +
+          '</div></div>';
+      }).join("");
+    } catch (e) {
+      list.innerHTML = '<p class="notice show err">Could not reach the server.</p>';
+    }
+  }
+
+  document.getElementById("timeOffForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("timeOffMsg");
+    setNotice(msg, "Submitting…", "info");
+    try {
+      const res = await authedFetch("/api/time-off", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          startDate: document.getElementById("toStart").value,
+          endDate: document.getElementById("toEnd").value,
+          reason: document.getElementById("toReason").value.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setNotice(msg, data.error || "Could not submit.", "err"); return; }
+      setNotice(msg, "Request submitted.", "ok");
+      document.getElementById("timeOffForm").reset();
+      loadTimeOff();
     } catch (e) {
       setNotice(msg, "Could not reach the server.", "err");
     }

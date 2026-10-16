@@ -222,6 +222,15 @@ module.exports = async (req, res) => {
       console.error("api/resources staff.resources error:", e);
     }
 
+    // De-dupe: several staff.resources rows are hand-copies of documents
+    // that already live in Airtable (same title) — Airtable carries real
+    // signature tracking for those, so when a title matches one already
+    // visible to this person, drop the staff.resources copy rather than
+    // show the same document twice.
+    const norm = (s) => (s || "").trim().toLowerCase();
+    const airtableTitles = new Set(airtableDocs.map((d) => norm(d.title)));
+    pgDocs = pgDocs.filter((d) => !airtableTitles.has(norm(d.title)));
+
     const docs = airtableDocs.concat(pgDocs)
       .sort((a, b) => SHELF_ORDER.indexOf(a.shelf) - SHELF_ORDER.indexOf(b.shelf) || a.title.localeCompare(b.title));
 
