@@ -1,11 +1,15 @@
 {
   "crons": [
-    { "path": "/api/cron/dispatch-sync", "schedule": "* * * * *" }
+    { "path": "/api/cron/dispatch-sync", "schedule": "* * * * *" },
+    { "path": "/api/cron/sign-pack", "schedule": "* * * * *" }
   ],
   "rewrites": [
     { "source": "/invoice/:token", "destination": "/invoice.html" },
     { "source": "/my-jobs", "destination": "/api/public/my-jobs" },
-    { "source": "/job-update", "destination": "/api/public/job-update" }
+    { "source": "/job-update", "destination": "/api/public/job-update" },
+    { "source": "/sign", "destination": "/api/public/sign" },
+    { "source": "/doc", "destination": "/api/public/doc" },
+    { "source": "/pack", "destination": "/api/public/pack" }
   ],
   "headers": [
     {
