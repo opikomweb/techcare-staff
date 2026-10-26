@@ -53,7 +53,7 @@ function decideWatch(f, alertCount, nowMs) {
     reason,
     code: f.Job_Code || "",
     name: f.Job_Name || "",
-    worker: arr(f.Assigned_To_Name || f.Assigned_Email).join(", "),
+    worker: arr(f.Assigned_Name || f.Assigned_Email).join(", "),
     workerEmail: arr(f.Assigned_Email).join(", "),
     workerPhone: arr(f.Assigned_Phone).join(", "),
     client: arr(f.Client_Name).join(", "),
