@@ -178,6 +178,29 @@
 
       <div id="tab-people" class="screen">
         <div class="card">
+          <h3 style="margin-top:0;">Add a person</h3>
+          <div id="personForm" class="inline-form">
+            <div><label>Full name</label><input id="personFormName" placeholder="e.g. Mahmudul Haque"></div>
+            <div><label>Email (their sign-in email)</label><input id="personFormEmail" type="email" placeholder="name@example.com"></div>
+            <div><label>Phone (optional)</label><input id="personFormPhone" placeholder="(403) 555-0100"></div>
+            <div><label>Project (optional)</label><select id="personFormProject"></select></div>
+            <div><label>Engagement track</label>
+              <select id="personFormTrack">
+                <option value="staff">Staff</option>
+                <option value="independent_contractor">Independent contractor</option>
+                <option value="part_time">Part-time</option>
+                <option value="temporary">Temporary</option>
+                <option value="volunteer">Volunteer</option>
+              </select>
+            </div>
+            <div><label>Role title (optional)</label><input id="personFormTitle" placeholder="e.g. Field tech"></div>
+            <div><label style="display:flex;align-items:center;gap:6px;"><input id="personFormCore" type="checkbox" style="width:auto;"> Core staff (admin access)</label></div>
+            <div><button id="personFormSubmit">Add person</button></div>
+          </div>
+          <div id="personFormMsg" class="notice"></div>
+          <p class="empty">Adding a person creates their staff record. They sign in with the email above — their first sign-in links their account automatically.</p>
+        </div>
+        <div class="card">
           <h3 style="margin-top:0;">Assign to a project</h3>
           <div id="roleForm" class="inline-form">
             <div><label>Person</label><select id="roleFormPerson"></select></div>
@@ -828,6 +851,7 @@
 
       fillSelect("roleFormPerson", peopleCache.map(p => [p.id, p.full_name + " (" + p.email + ")"]));
       fillSelect("roleFormProject", projectsCache.map(p => [p.id, p.name]));
+      fillSelect("personFormProject", [["", "Assign later"]].concat(projectsCache.map(p => [p.id, p.name])));
       fillSelect("resProject", [["", "All projects"]].concat(projectsCache.map(p => [p.id, p.name])));
       fillSelect("annProject", [["", "Everyone (all projects)"]].concat(projectsCache.map(p => [p.id, p.name])));
 
@@ -882,6 +906,35 @@
       renderPeopleTable();
     } catch (e) { alert("Could not reach the server."); }
   }
+
+  document.getElementById("personFormSubmit").addEventListener("click", async () => {
+    const name = document.getElementById("personFormName").value.trim();
+    const email = document.getElementById("personFormEmail").value.trim();
+    const phone = document.getElementById("personFormPhone").value.trim();
+    const projectId = document.getElementById("personFormProject").value;
+    const track = document.getElementById("personFormTrack").value;
+    const title = document.getElementById("personFormTitle").value.trim();
+    const isCore = document.getElementById("personFormCore").checked;
+    const msg = document.getElementById("personFormMsg");
+    if (!name || !email) { setNotice(msg, "Full name and email are both required.", "err"); return; }
+    try {
+      const body = { full_name: name, email, phone: phone || null, is_core_staff: isCore };
+      if (projectId) { body.project_id = projectId; body.engagement_track = track; body.role_title = title || null; }
+      const res = await authedFetch("/api/admin/people", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) { setNotice(msg, data.error || "Could not add this person.", "err"); return; }
+      setNotice(msg, "Added " + data.person.full_name + " — they can now sign in with " + data.person.email + (data.assigned ? " and are assigned to the project." : ". Use Assign to a project to put them on a project."), "ok");
+      document.getElementById("personFormName").value = "";
+      document.getElementById("personFormEmail").value = "";
+      document.getElementById("personFormPhone").value = "";
+      document.getElementById("personFormTitle").value = "";
+      document.getElementById("personFormCore").checked = false;
+      loadPeople();
+    } catch (e) { setNotice(msg, "Could not reach the server.", "err"); }
+  });
 
   document.getElementById("roleFormSubmit").addEventListener("click", async () => {
     const personId = document.getElementById("roleFormPerson").value;
