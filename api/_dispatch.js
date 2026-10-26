@@ -41,7 +41,7 @@ const TZ = "America/Edmonton";
 const JOB_FIELDS = [
   "Job_Name", "Job_Code", "Status", "Assigned_To", "Assigned_Email",
   "Start_Time", "End_Time", "Location", "Brief_Google_Doc_URL",
-  "Brief URL", "GCal_Event_ID", "Calendar_Signature", "Synced_Signature",
+  "GCal_Event_ID", "Calendar_Signature", "Synced_Signature",
   "Dispatch_Blockers", "Client_Name", "Client_Phone", "Client_Address",
   "Job_Key", "Sync_Error",
 ];
