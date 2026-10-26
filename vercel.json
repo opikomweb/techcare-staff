@@ -5,7 +5,9 @@
     { "path": "/api/cron/handover", "schedule": "* * * * *" },
     { "path": "/api/cron/daily-brief", "schedule": "0 13 * * *" },
     { "path": "/api/cron/daily-brief", "schedule": "0 14 * * *" },
-    { "path": "/api/cron/working-alone", "schedule": "* * * * *" }
+    { "path": "/api/cron/working-alone", "schedule": "* * * * *" },
+    { "path": "/api/cron/visit-confirmed", "schedule": "* * * * *" },
+    { "path": "/api/cron/feedback-watch", "schedule": "* * * * *" }
   ],
   "rewrites": [
     { "source": "/invoice/:token", "destination": "/invoice.html" },
