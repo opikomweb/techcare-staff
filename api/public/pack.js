@@ -32,7 +32,7 @@ module.exports = async (req, res) => {
         // A full record may lack a field the sweep normally requests;
         // re-read with the pack field set for correctness.
         const fields = kind === "worker"
-          ? ["Full_Name", "Email", "Phone_E164", "Phone", "Signed_Codes", "Sign_Code", "Engagement_Track"]
+          ? ["Full_Name", "Email", "Phone_E164", "Signed_Codes", "Sign_Code", "Engagement_Track"]
           : ["Client_Name", "Email", "Phone", "Signed_Codes", "Sign_Code"];
         const params = new URLSearchParams();
         for (const f of fields) params.append("fields[]", f);

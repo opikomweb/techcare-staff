@@ -232,7 +232,7 @@ async function runSignPackSweep() {
   const policies = await fetchPolicies(readKey);
   const [clients, workers] = await Promise.all([
     listAll(CLIENTS_TABLE, ["Client_Name", "Email", "Phone", "Signed_Codes", "Sign_Code"], "{Send_Sign_Pack}=TRUE()", readKey),
-    listAll(DIRECTORY_TABLE, ["Full_Name", "Email", "Phone_E164", "Phone", "Signed_Codes", "Sign_Code", "Engagement_Track"], "{Send_Sign_Pack}=TRUE()", readKey),
+    listAll(DIRECTORY_TABLE, ["Full_Name", "Email", "Phone_E164", "Signed_Codes", "Sign_Code", "Engagement_Track"], "{Send_Sign_Pack}=TRUE()", readKey),
   ]);
   const results = [];
   for (const rec of clients) results.push(await sendPackFor(rec, "client", policies, { readKey, writeKey }));
