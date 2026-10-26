@@ -339,7 +339,9 @@ async function runDispatchSync({ jobId, dryRun } = {}) {
           const stamp = `NOT SENT ${niceShort(new Date())}. Fix these, then set Status to Draft and back to Dispatched:\n${a.blockers}`;
           const already = String(f.Sync_Error || "");
           entry.blocked = true;
-          if (!already.includes(a.blockers)) {
+          if (already.includes(a.blockers)) {
+            entry.alreadyReported = true;
+          } else {
             await airtable("PATCH", `/${JOBS_TABLE}/${rec.id}`, writeKey, { fields: { Sync_Error: stamp }, typecast: true });
             await sendEmail({
               to: WILTON,
