@@ -2,7 +2,9 @@
   "crons": [
     { "path": "/api/cron/dispatch-sync", "schedule": "* * * * *" },
     { "path": "/api/cron/sign-pack", "schedule": "* * * * *" },
-    { "path": "/api/cron/handover", "schedule": "* * * * *" }
+    { "path": "/api/cron/handover", "schedule": "* * * * *" },
+    { "path": "/api/cron/daily-brief", "schedule": "0 13 * * *" },
+    { "path": "/api/cron/daily-brief", "schedule": "0 14 * * *" }
   ],
   "rewrites": [
     { "source": "/invoice/:token", "destination": "/invoice.html" },
