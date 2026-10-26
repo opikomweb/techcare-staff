@@ -85,11 +85,19 @@ module.exports = async (req, res) => {
       const gate = await requireCoreStaff(req).catch(() => ({ error: "no session" }));
       if (!gate.error) authorized = true;
     }
-    // Unauthenticated invocations are treated as scheduler pings: they
-    // only run inside the 7 AM Edmonton window and never with dry/force.
+    // Unauthenticated invocations are treated as scheduler pings: a
+    // full run only happens inside the 7 AM Edmonton window. A dry run
+    // is allowed any time without auth because it can only ever send
+    // the [TEST] digest to Wilton — no client or worker is emailed.
+    // (The portal's sign-in token travels in an Authorization header,
+    // which a plain browser navigation cannot send, so this is also
+    // the only way to preview the brief from a browser.)
     const isSchedulerPing = !authorized;
-    if (isSchedulerPing && edmontonHour() !== 7) {
+    if (isSchedulerPing && !dry && edmontonHour() !== 7) {
       return res.status(200).json({ ok: true, skipped: "outside_7am_edmonton" });
+    }
+    if (isSchedulerPing && force && !dry) {
+      return res.status(401).json({ error: "Unauthorized." });
     }
     if (!process.env.AIRTABLE_API_KEY) throw new Error("AIRTABLE_API_KEY is not set.");
     if (!process.env.RESEND_API_KEY) throw new Error("RESEND_API_KEY is not set.");
