@@ -15,7 +15,7 @@ const JOBS_TABLE = "tblpsypl4j8CChNq1";
 // "WilGlobo Ops Core - Job Consent (Tasks and Charges)" n8n workflow —
 // client-facing task/charge sign-off page. Same Job_Key secret pattern
 // as Status_Form_URL.
-const CONSENT_BASE_URL = "https://wilglobo.app.n8n.cloud/webhook/ops-job-consent";
+const CONSENT_BASE_URL = "https://staff.wilglobo.com/job-consent";
 
 module.exports = async (req, res) => {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed." });

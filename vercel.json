@@ -1,7 +1,8 @@
 {
   "crons": [
     { "path": "/api/cron/dispatch-sync", "schedule": "* * * * *" },
-    { "path": "/api/cron/sign-pack", "schedule": "* * * * *" }
+    { "path": "/api/cron/sign-pack", "schedule": "* * * * *" },
+    { "path": "/api/cron/handover", "schedule": "* * * * *" }
   ],
   "rewrites": [
     { "source": "/invoice/:token", "destination": "/invoice.html" },
@@ -9,7 +10,9 @@
     { "source": "/job-update", "destination": "/api/public/job-update" },
     { "source": "/sign", "destination": "/api/public/sign" },
     { "source": "/doc", "destination": "/api/public/doc" },
-    { "source": "/pack", "destination": "/api/public/pack" }
+    { "source": "/pack", "destination": "/api/public/pack" },
+    { "source": "/job-consent", "destination": "/api/public/job-consent" },
+    { "source": "/handover", "destination": "/api/public/handover" }
   ],
   "headers": [
     {
