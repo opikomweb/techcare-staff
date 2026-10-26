@@ -31,14 +31,15 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: "That shift doesn't look right. Refresh the list and try again." });
     }
 
-    // Same n8n "ignore bots" webhook filter as shifts.js — Node's default
-    // fetch() User-Agent gets treated as a bot and rejected with 403 before
-    // the workflow runs, so a normal-looking UA is required here too.
+    // Same n8n "ignore bots" webhook filter as shifts.js — and the same
+    // trap: the old custom "WilGlobo-TechCare-Staff/1.0" UA is rejected
+    // with 403 "Authorization data is wrong!" (verified 2026-10-26).
+    // A standard browser UA is required here too.
     const n8nRes = await fetch(`${N8N_BASE}/webhook/ops-claim`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "User-Agent": "WilGlobo-TechCare-Staff/1.0 (+https://staff.wilglobo.com)",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
       },
       body: JSON.stringify({
         job: jobId,

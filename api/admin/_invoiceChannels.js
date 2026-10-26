@@ -47,7 +47,13 @@ async function sendInvoiceSms({ to, body, invoiceId }) {
   try {
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-techcare-key": key },
+      headers: {
+        "Content-Type": "application/json",
+        "x-techcare-key": key,
+        // n8n webhooks run with "ignore bots"; a standard browser UA keeps
+        // this from being rejected like the old custom UA was (2026-10-26).
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+      },
       body: JSON.stringify({ to, body, invoiceId }),
     });
     const data = await res.json().catch(() => ({}));

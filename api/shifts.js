@@ -18,13 +18,14 @@ module.exports = async (req, res) => {
     const result = await verifyAndGetContractor(req);
     if (result.error) return res.status(result.status).json({ error: result.error });
 
-    // n8n's webhook node has "ignore bots" on for this workflow (it blocks
-    // requests that look automated). Node's fetch() sends no User-Agent by
-    // default, which n8n's bot filter treats as a bot and rejects with 403
-    // before the workflow even runs. A normal-looking UA avoids that.
+    // n8n's webhook node has "ignore bots" on for this workflow. Verified
+    // live 2026-10-26: the old custom "WilGlobo-TechCare-Staff/1.0" UA is
+    // itself rejected with 403 "Authorization data is wrong!" (which is
+    // why this tab always errored), while a standard browser UA gets 200.
+    // Keep this a plain browser UA.
     const n8nRes = await fetch(`${N8N_BASE}/webhook/ops-open-shifts`, {
       method: "GET",
-      headers: { "User-Agent": "WilGlobo-TechCare-Staff/1.0 (+https://staff.wilglobo.com)" },
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36" },
     });
     if (!n8nRes.ok) {
       console.error("shifts.js: n8n returned", n8nRes.status);
