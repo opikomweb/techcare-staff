@@ -302,7 +302,7 @@ async function runDispatchSync({ jobId, dryRun } = {}) {
     changed = [rec];
   } else {
     changed = await listJobsByFormula(
-      "AND({Synced_Signature}<>{Calendar_Signature},{Status}!='Completed')",
+      "AND({Synced_Signature}!={Calendar_Signature},{Status}!='Completed')",
       JOB_FIELDS,
       readKey
     );
