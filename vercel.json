@@ -3,7 +3,9 @@
     { "path": "/api/cron/dispatch-sync", "schedule": "* * * * *" }
   ],
   "rewrites": [
-    { "source": "/invoice/:token", "destination": "/invoice.html" }
+    { "source": "/invoice/:token", "destination": "/invoice.html" },
+    { "source": "/my-jobs", "destination": "/api/public/my-jobs" },
+    { "source": "/job-update", "destination": "/api/public/job-update" }
   ],
   "headers": [
     {
