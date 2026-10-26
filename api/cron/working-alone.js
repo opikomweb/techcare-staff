@@ -67,7 +67,7 @@ async function runWatch() {
     JOBS_TABLE,
     readKey,
     "AND({Arrived_At}!='',NOT(OR({Status}='Completed',{Status}='Cancelled')))",
-    ["Job_Code", "Job_Name", "Status", "Arrived_At", "Departed_At", "End_Time", "Contractor_Feedback", "Assigned_To_Name", "Assigned_Email", "Assigned_Phone", "Client_Name", "Client_Phone", "Location", "Client_Address"]
+    ["Job_Code", "Job_Name", "Status", "Arrived_At", "Departed_At", "End_Time", "Contractor_Feedback", "Assigned_Name", "Assigned_Email", "Assigned_Phone", "Client_Name", "Client_Phone", "Location", "Client_Address"]
   );
   if (!jobs.length) return { watching: 0, alerts: [] };
 
