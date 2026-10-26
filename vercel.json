@@ -1,4 +1,7 @@
 {
+  "crons": [
+    { "path": "/api/cron/dispatch-sync", "schedule": "* * * * *" }
+  ],
   "rewrites": [
     { "source": "/invoice/:token", "destination": "/invoice.html" }
   ],

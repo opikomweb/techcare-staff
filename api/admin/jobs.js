@@ -14,14 +14,16 @@
 // of a confusing Airtable 403.
 //
 // Setting Status to "Dispatched" (with Assigned_To, Start_Time and
-// End_Time already filled in) is all this endpoint does to "dispatch" a
-// job — it never calls n8n directly. The existing "WilGlobo Ops Core -
-// Dispatch and Calendar Invites" workflow polls Jobs_Schedules once a
-// minute and picks up the change itself (same path as editing the record
-// by hand in Airtable), so the compliance gate, calendar invite and
-// worker email logic is reused exactly as-is, not duplicated here.
+// End_Time already filled in) is all an admin has to do to "dispatch" a
+// job. The dispatch sync itself lives in api/_dispatch.js (a port of
+// the retired n8n "Dispatch and Calendar Invites" workflow): a PATCH
+// here runs it for that job immediately, and the Vercel cron sweep
+// (api/cron/dispatch-sync.js, every minute) catches any change made
+// directly in Airtable. The compliance gate, calendar invite and worker
+// email behavior is the workflow's, preserved.
 const crypto = require("crypto");
 const { requireCoreStaff } = require("./_requireCoreStaff");
+const { runDispatchSync } = require("../_dispatch");
 
 const BASE_ID = "appBiAKY6ivoImcaQ";
 const JOBS_TABLE = "tblpsypl4j8CChNq1";
@@ -179,8 +181,21 @@ module.exports = async (req, res) => {
       if (Object.keys(fields).length === 0) return res.status(400).json({ error: "Nothing to update." });
 
       const updated = await airtable("PATCH", `/${JOBS_TABLE}/${id}`, writeKey, { fields, typecast: true });
+
+      // Run the dispatch sync for this job right away so assigning or
+      // dispatching from the portal sends the invite immediately; the
+      // cron sweep remains the backstop. A sync failure never fails the
+      // update itself.
+      let dispatch = null;
+      try {
+        dispatch = await runDispatchSync({ jobId: id });
+      } catch (e) {
+        console.error("admin/jobs dispatch sync failed:", e);
+      }
+
       return res.status(200).json({
         job: { id: updated.id, status: updated.fields.Status, assignedTo: updated.fields.Assigned_To || [] },
+        dispatch,
       });
     }
 
