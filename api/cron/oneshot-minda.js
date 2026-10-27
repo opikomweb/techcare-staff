@@ -14,7 +14,7 @@ const JOB_ID = "recRMkVKurhT7Ltkw";
 const TO = "+18254883732";
 const BOOKING = "https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0T0pEaBkmhSA8V2SoQxDkoD5UZuZRWhsxSukGDOEaV4jpQ5ptplsBheejNfEix6SfpMV1cUZOI";
 const MSG1 = "WilGlobo TechCare: Hi Minda, we are sorry - Tanya was delayed by the weather today and let you know she would be about 15 minutes late. When she arrived and tried to reach you, we could not get through, so the session did not happen. We would still like to help you. Reply STOP to opt out.";
-const MSG2 = `Rebook options (confirmed with upfront payment): 1) Wed Oct 28 at 3:30 PM 2) Thu Oct 29 at 10:30 AM 3) Fri Oct 30 at 3:30 PM. Reply with your pick, or book: ${BOOKING} Reply STOP to opt out.`;
+const MSG2 = `Rebook options (confirmed with upfront payment): 1) Wed Oct 28 3:30 PM 2) Thu Oct 29 10:30 AM 3) Fri Oct 30 3:30 PM. Reply your pick, or book: ${BOOKING} Reply STOP to opt out.`;
 
 module.exports = async (req, res) => {
   if (req.method !== "GET" && req.method !== "POST") {
