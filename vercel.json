@@ -7,7 +7,8 @@
     { "path": "/api/cron/daily-brief", "schedule": "0 14 * * *" },
     { "path": "/api/cron/working-alone", "schedule": "* * * * *" },
     { "path": "/api/cron/visit-confirmed", "schedule": "* * * * *" },
-    { "path": "/api/cron/feedback-watch", "schedule": "* * * * *" }
+    { "path": "/api/cron/feedback-watch", "schedule": "* * * * *" },
+    { "path": "/api/cron/review-request", "schedule": "0 * * * *" }
   ],
   "rewrites": [
     { "source": "/invoice/:token", "destination": "/invoice.html" },
