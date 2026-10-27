@@ -20,7 +20,8 @@
     { "source": "/pack", "destination": "/api/public/pack" },
     { "source": "/job-consent", "destination": "/api/public/job-consent" },
     { "source": "/handover", "destination": "/api/public/handover" },
-    { "source": "/start", "destination": "/api/public/client-intake" }
+    { "source": "/start", "destination": "/api/public/client-intake" },
+    { "source": "/join", "destination": "/api/public/worker-onboarding" }
   ],
   "headers": [
     {
