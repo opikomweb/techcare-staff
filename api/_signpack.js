@@ -22,7 +22,7 @@ const WILTON = "wilton@wilglobo.com";
 const FROM = "TechCare by WilGlobo <tech@wilglobo.com>";
 const LOGO_URL = "https://staff.wilglobo.com/assets/techcare-logo.png";
 const PORTAL = "https://staff.wilglobo.com";
-const SMS_WEBHOOK_DEFAULT = "https://wilglobo.app.n8n.cloud/webhook/techcare-send-sms";
+const SMS_WEBHOOK_DEFAULT = "https://staff.wilglobo.com/api/public/send-sms";
 const BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 const CODE_RE = /^[a-f0-9]{32}$/;
 

@@ -36,7 +36,7 @@ async function sendInvoiceEmail({ to, subject, html }) {
 // credential; this app never sees a Twilio key. Env: TECHCARE_SMS_KEY
 // (required — its absence is what triggers the not-configured fallback),
 // TECHCARE_SMS_WEBHOOK_URL (optional override of the default below).
-const DEFAULT_SMS_WEBHOOK = "https://wilglobo.app.n8n.cloud/webhook/techcare-send-sms";
+const DEFAULT_SMS_WEBHOOK = "https://staff.wilglobo.com/api/public/send-sms";
 
 async function sendInvoiceSms({ to, body, invoiceId }) {
   const key = process.env.TECHCARE_SMS_KEY;
