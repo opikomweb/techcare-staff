@@ -147,6 +147,7 @@
         <button class="tab" data-tab="time">Time &amp; leave</button>
         <button class="tab" data-tab="announcements">Announcements</button>
         <button class="tab" data-tab="invoices">Invoices</button>
+        <button class="tab" data-tab="ops">Operations</button>
       </div>
 
       <div id="tab-overview" class="screen show">
@@ -175,6 +176,109 @@
         <div class="card section" id="jobActivityCard">
           <h3 style="margin-top:0;">Job activity — check-ins, notes, photos, incidents</h3>
           <div id="jobActivityList" class="loading"><span class="spinner"></span> Loading activity…</div>
+        </div>
+      </div>
+
+      
+      <div id="tab-ops" class="screen">
+        <div class="card section">
+          <h3 style="margin-top:0;">Operations — edit everything here, no Airtable needed</h3>
+          <p class="ctx">Jobs, prices, clients and staff details are edited on this page. Changes save straight to the ops records behind the scenes.</p>
+          <div><button id="opsRefresh" class="small secondary">Refresh</button></div>
+          <div id="opsMsg" class="notice"></div>
+        </div>
+
+        <div class="card section">
+          <h3 style="margin-top:0;">Job editor</h3>
+          <div class="inline-form">
+            <div><label>Job</label><select id="opsJobSelect"></select></div>
+          </div>
+          <div id="opsJobEditor" style="display:none;">
+            <div class="inline-form">
+              <div><label>Job name</label><input id="opsJobName"></div>
+              <div><label>Status</label><select id="opsJobStatus"></select></div>
+              <div><label>Assigned staff</label><select id="opsJobWorker"></select></div>
+              <div><label>Start</label><input id="opsJobStart" type="datetime-local"></div>
+              <div><label>End</label><input id="opsJobEnd" type="datetime-local"></div>
+              <div><label>Location</label><input id="opsJobLocation"></div>
+              <div><label style="display:flex;align-items:center;gap:6px;"><input id="opsJobClaim" type="checkbox" style="width:auto;"> Open for claim</label></div>
+              <div><button id="opsJobSave">Save job</button></div>
+            </div>
+            <div id="opsJobMeta" class="ctx"></div>
+            <h4>Tasks &amp; prices</h4>
+            <div id="opsTasks"></div>
+            <div class="inline-form">
+              <div><label>New task</label><input id="opsTLine" placeholder="What was done"></div>
+              <div><label>Qty</label><input id="opsTQty" type="number" step="1" value="1" style="width:70px;"></div>
+              <div><label>Client price $</label><input id="opsTPrice" type="number" step="0.01" style="width:100px;"></div>
+              <div><label>Worker rate $</label><input id="opsTRate" type="number" step="0.01" style="width:100px;"></div>
+              <div><button id="opsTAdd" class="small">Add task</button></div>
+            </div>
+            <h4>Add a note to this job</h4>
+            <div class="inline-form">
+              <div style="flex:1;"><input id="opsNoteText" placeholder="Note for the record (visible in job activity)"></div>
+              <div><button id="opsNoteBtn" class="small">Add note</button></div>
+            </div>
+            <h4>Recent activity &amp; staff feedback</h4>
+            <div id="opsUpdates" class="ctx">—</div>
+          </div>
+        </div>
+
+        <div class="card section">
+          <h3 style="margin-top:0;">Clients</h3>
+          <div id="opsClients" class="loading"><span class="spinner"></span> Loading clients…</div>
+          <div id="opsClientEditor" style="display:none;">
+            <h4 id="opsClientTitle">Edit client</h4>
+            <div class="inline-form">
+              <div><label>Name</label><input id="opsCName"></div>
+              <div><label>Phone</label><input id="opsCPhone"></div>
+              <div><label>Email</label><input id="opsCEmail" type="email"></div>
+              <div><label>Address</label><input id="opsCAddress"></div>
+              <div><label>City</label><input id="opsCCity"></div>
+              <div><label>Preferred contact</label><select id="opsCPref"><option value="">—</option><option>Phone</option><option>Text</option><option>Email</option></select></div>
+              <div><label>Accessibility notes</label><input id="opsCAccess"></div>
+              <div><label>Notes</label><input id="opsCNotes"></div>
+              <div><button id="opsCSave">Save client</button></div>
+            </div>
+          </div>
+          <h4>Add a client</h4>
+          <div class="inline-form">
+            <div><label>Name</label><input id="opsNCName" placeholder="Full name"></div>
+            <div><label>Phone</label><input id="opsNCPhone"></div>
+            <div><label>Email</label><input id="opsNCEmail" type="email"></div>
+            <div><button id="opsNCAdd" class="small">Add client</button></div>
+          </div>
+        </div>
+
+        <div class="card section">
+          <h3 style="margin-top:0;">Staff details (Directory)</h3>
+          <div id="opsStaff" class="loading"><span class="spinner"></span> Loading staff…</div>
+          <div id="opsStaffEditor" style="display:none;">
+            <h4 id="opsStaffTitle">Edit staff</h4>
+            <div class="inline-form">
+              <div><label>Full name</label><input id="opsWName"></div>
+              <div><label>Email</label><input id="opsWEmail" type="email"></div>
+              <div><label>Phone</label><input id="opsWPhone"></div>
+              <div><label>Status</label><select id="opsWStatus"><option>Active</option><option>Onboarding</option><option>Inactive</option></select></div>
+              <div><label>Role</label><input id="opsWRole"></div>
+              <div><label>Engagement track</label><input id="opsWTrack"></div>
+              <div><label>Pay basis</label><input id="opsWPay"></div>
+              <div><label>Default hourly rate $</label><input id="opsWRate" type="number" step="0.01"></div>
+              <div><label>Skills (comma separated)</label><input id="opsWSkills"></div>
+              <div><label>Police check date</label><input id="opsWPolice" type="date"></div>
+              <div><label>Insurance expiry</label><input id="opsWIns" type="date"></div>
+              <div><label>WCB clearance expiry</label><input id="opsWWcb" type="date"></div>
+              <div><label>Business name / GST</label><input id="opsWBiz"></div>
+              <div><label>Notes</label><input id="opsWNotes"></div>
+              <div><button id="opsWSave">Save staff</button></div>
+            </div>
+          </div>
+          <p class="ctx">New staff still join through the onboarding form (staff.wilglobo.com/join) so their agreements and ID checks are collected.</p>
+        </div>
+
+        <div class="card section">
+          <h3 style="margin-top:0;">Pending — inbox requests &amp; follow-ups</h3>
+          <div id="opsPending" class="loading"><span class="spinner"></span> Loading pending items…</div>
         </div>
       </div>
 
@@ -432,7 +536,7 @@
 
   function switchTab(key) {
     document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x.dataset.tab === key));
-    ["overview", "jobs", "people", "resources", "time", "announcements", "invoices"].forEach((k) => {
+    ["overview", "jobs", "people", "resources", "time", "announcements", "invoices", "ops"].forEach((k) => {
       const el = document.getElementById("tab-" + k);
       if (k === key) show(el); else hide(el);
     });
@@ -1446,5 +1550,300 @@
     if (data.session) showApp(data.session);
   });
 </script>
+<script>
+// ---------- Operations tab (added Oct 27, 2026) ----------
+// Handy editing for jobs, tasks/prices, clients, staff details and
+// pending items — all through /api/admin/ops, so nobody has to open
+// Airtable. Staff enter their own side (check-ins, feedback, time)
+// on the worker pages; this tab is the admin's desk.
+(function () {
+  var opsLoaded = false;
+  var opsJobs = [], opsWorkers = [], opsClientsById = {};
+  var opsCurrentJob = null, opsEditClient = null, opsEditWorker = null;
+  var JOB_STATUSES = ["Draft", "Dispatched", "Accepted", "In Progress", "Completed", "Issues/Blocked", "Cancelled"];
+
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function $(id) { return document.getElementById(id); }
+  function opsMsg(text, isErr) {
+    var el = $("opsMsg");
+    el.className = "notice show" + (isErr ? " err" : "");
+    el.textContent = text;
+  }
+  function money(n) { return "$" + Number(n || 0).toFixed(2); }
+  function fmtLocal(iso) {
+    if (!iso) return "";
+    var parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Edmonton", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(iso));
+    var p = {};
+    parts.forEach(function (x) { p[x.type] = x.value; });
+    return p.year + "-" + p.month + "-" + p.day + "T" + p.hour + ":" + p.minute;
+  }
+  function fmtWhen(iso) {
+    if (!iso) return "";
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Edmonton", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(iso));
+  }
+  async function opsPost(body) {
+    var res = await authedFetch("/api/admin/ops", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.error || "Request failed.");
+    return data;
+  }
+  async function opsGet(url) {
+    var res = await authedFetch(url);
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.error || "Request failed.");
+    return data;
+  }
+
+  async function loadOps() {
+    try {
+      var jobsData = await opsGet("/api/admin/jobs");
+      opsJobs = jobsData.jobs || [];
+      var fd = await opsGet("/api/admin/job-form-data");
+      opsWorkers = fd.workers || [];
+      opsClientsById = {};
+      (fd.clients || []).forEach(function (c) { opsClientsById[c.id] = c; });
+      var sel = $("opsJobSelect");
+      sel.innerHTML = '<option value="">Pick a job…</option>' + opsJobs.map(function (j) {
+        return '<option value="' + j.id + '">' + esc(j.code || "") + " — " + esc(j.name) + " (" + esc(j.status) + ")</option>";
+      }).join("");
+      var wsel = $("opsJobWorker");
+      wsel.innerHTML = '<option value="">Unassigned</option>' + opsWorkers.map(function (w) {
+        return '<option value="' + w.id + '">' + esc(w.name) + (w.ready ? "" : " — paperwork pending") + "</option>";
+      }).join("");
+      var st = $("opsJobStatus");
+      st.innerHTML = JOB_STATUSES.map(function (s) { return "<option>" + s + "</option>"; }).join("");
+      await Promise.all([loadOpsClients(), loadOpsStaff(), loadOpsPending()]);
+      opsLoaded = true;
+    } catch (e) { opsMsg("Could not load Operations: " + e.message, true); }
+  }
+
+  async function loadOpsJob(id) {
+    if (!id) { $("opsJobEditor").style.display = "none"; opsCurrentJob = null; return; }
+    try {
+      var data = await opsGet("/api/admin/ops?view=job&id=" + encodeURIComponent(id));
+      var j = data.job;
+      opsCurrentJob = j;
+      $("opsJobEditor").style.display = "block";
+      $("opsJobName").value = j.Job_Name || "";
+      $("opsJobStatus").value = j.Status || "Draft";
+      $("opsJobWorker").value = (j.Assigned_To || [])[0] || "";
+      $("opsJobStart").value = fmtLocal(j.Start_Time);
+      $("opsJobEnd").value = fmtLocal(j.End_Time);
+      $("opsJobLocation").value = j.Location || "";
+      $("opsJobClaim").checked = !!j.Open_For_Claim;
+      var clientName = (j.Client || []).map(function (cid) { return (opsClientsById[cid] || {}).name || ""; }).filter(Boolean).join(", ");
+      var meta = [];
+      meta.push("Client: <b>" + esc(clientName || "—") + "</b>");
+      meta.push("Total: <b>" + money(j.Job_Total) + "</b> · Worker pay: <b>" + money(j.Worker_Pay_Total) + "</b>");
+      if (j.Invoice_Status) meta.push("Invoice: " + esc(j.Invoice_Status));
+      if (j.Dispatch_Blockers) meta.push('<span style="color:#b00020;">Dispatch blockers: ' + esc(j.Dispatch_Blockers) + "</span>");
+      if (j.Client_Gaps) meta.push("Client paperwork: " + esc(j.Client_Gaps));
+      if (j.Worker_Gaps) meta.push("Staff paperwork: " + esc(j.Worker_Gaps));
+      if (j.Arrived_At) meta.push("Arrived " + fmtWhen(j.Arrived_At));
+      if (j.Departed_At) meta.push("Left " + fmtWhen(j.Departed_At) + (j.Signoff_Method ? " · sign-off: " + esc(j.Signoff_Method) : ""));
+      $("opsJobMeta").innerHTML = meta.join("<br>");
+      renderOpsTasks(data.tasks || []);
+      var fb = j.Contractor_Feedback ? '<div style="margin-bottom:8px;"><b>Latest staff feedback:</b><br>' + esc(j.Contractor_Feedback) + "</div>" : "";
+      var ups = (data.updates || []).map(function (u) {
+        return "<div>• <b>" + esc(u.Form_Type || "Update") + "</b> — " + esc(u.Submitted_By || "") + " · " + fmtWhen(u.Submitted_At || u.created) + (u.Notes ? "<br>" + esc(u.Notes) : "") + "</div>";
+      }).join("");
+      $("opsUpdates").innerHTML = fb + (ups || "No activity yet.");
+    } catch (e) { opsMsg("Could not load that job: " + e.message, true); }
+  }
+
+  function renderOpsTasks(tasks) {
+    var el = $("opsTasks");
+    if (!tasks.length) { el.innerHTML = '<p class="ctx">No tasks yet — add the first one below.</p>'; return; }
+    el.innerHTML = tasks.map(function (t) {
+      return '<div class="inline-form" data-task="' + t.id + '">' +
+        '<div style="flex:2;"><input class="tLine" value="' + esc(t.Task_Line || "") + '"></div>' +
+        '<div><input class="tQty" type="number" step="1" value="' + (t.Quantity || 1) + '" style="width:64px;"></div>' +
+        '<div><input class="tPrice" type="number" step="0.01" value="' + (t.Unit_Price || 0) + '" style="width:96px;"></div>' +
+        '<div><input class="tRate" type="number" step="0.01" value="' + (t.Worker_Rate || 0) + '" style="width:96px;"></div>' +
+        '<div><button class="small tSave">Save</button> <button class="small danger tDel">Delete</button></div></div>';
+    }).join("");
+    el.querySelectorAll("[data-task]").forEach(function (row) {
+      var id = row.getAttribute("data-task");
+      row.querySelector(".tSave").addEventListener("click", async function () {
+        try {
+          await opsPost({ action: "save_task", taskId: id, Task_Line: row.querySelector(".tLine").value, Quantity: row.querySelector(".tQty").value, Unit_Price: row.querySelector(".tPrice").value, Worker_Rate: row.querySelector(".tRate").value });
+          opsMsg("Task saved. Totals update on the job right away.");
+          loadOpsJob(opsCurrentJob.id);
+        } catch (e) { opsMsg(e.message, true); }
+      });
+      row.querySelector(".tDel").addEventListener("click", async function () {
+        try {
+          await opsPost({ action: "delete_task", taskId: id });
+          opsMsg("Task deleted.");
+          loadOpsJob(opsCurrentJob.id);
+        } catch (e) { opsMsg(e.message, true); }
+      });
+    });
+  }
+
+  async function loadOpsClients() {
+    var data = await opsGet("/api/admin/ops?view=clients");
+    var el = $("opsClients");
+    var rows = (data.clients || []).map(function (c) {
+      return "<tr><td class='t'>" + esc(c.Client_Name || "Unnamed") + "</td><td class='d'>" + esc(c.Phone || "") + "</td><td class='d'>" + esc(c.Email || "") + "</td><td class='d'>" + esc(c.Client_Gaps || "") + "</td><td><button class='small secondary' data-client='" + c.id + "'>Edit</button></td></tr>";
+    }).join("");
+    el.className = "";
+    el.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Paperwork gaps</th><th></th></tr></thead><tbody>' + (rows || "<tr><td class='empty'>No clients yet.</td></tr>") + "</tbody></table></div>";
+    el.querySelectorAll("[data-client]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var c = (data.clients || []).find(function (x) { return x.id === btn.getAttribute("data-client"); });
+        if (!c) return;
+        opsEditClient = c.id;
+        $("opsClientTitle").textContent = "Edit client — " + (c.Client_Name || "");
+        $("opsCName").value = c.Client_Name || ""; $("opsCPhone").value = c.Phone || ""; $("opsCEmail").value = c.Email || "";
+        $("opsCAddress").value = c.Service_Address || ""; $("opsCCity").value = c.City || ""; $("opsCPref").value = c.Preferred_Contact || "";
+        $("opsCAccess").value = c.Accessibility_Notes || ""; $("opsCNotes").value = c.Notes || "";
+        $("opsClientEditor").style.display = "block";
+        $("opsClientEditor").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  }
+
+  async function loadOpsStaff() {
+    var data = await opsGet("/api/admin/ops?view=staff");
+    var el = $("opsStaff");
+    var rows = (data.staff || []).map(function (w) {
+      return "<tr><td class='t'>" + esc(w.Full_Name || "Unnamed") + "</td><td class='d'>" + esc(w.Status || "") + "</td><td class='d'>" + esc(w.Engagement_Track || w.Worker_Type || "") + "</td><td class='d'>" + money(w.Default_Hourly_Rate) + "/hr</td><td class='d'>" + esc(w.Dispatch_Gaps || "") + "</td><td><button class='small secondary' data-worker='" + w.id + "'>Edit</button></td></tr>";
+    }).join("");
+    el.className = "";
+    el.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Status</th><th>Track</th><th>Default rate</th><th>Dispatch gaps</th><th></th></tr></thead><tbody>' + (rows || "<tr><td class='empty'>No staff yet.</td></tr>") + "</tbody></table></div>";
+    el.querySelectorAll("[data-worker]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var w = (data.staff || []).find(function (x) { return x.id === btn.getAttribute("data-worker"); });
+        if (!w) return;
+        opsEditWorker = w.id;
+        $("opsStaffTitle").textContent = "Edit staff — " + (w.Full_Name || "");
+        $("opsWName").value = w.Full_Name || ""; $("opsWEmail").value = w.Email || ""; $("opsWPhone").value = w.Phone_E164 || "";
+        $("opsWStatus").value = w.Status || "Onboarding"; $("opsWRole").value = w.Role || ""; $("opsWTrack").value = w.Engagement_Track || "";
+        $("opsWPay").value = w.Pay_Basis || ""; $("opsWRate").value = w.Default_Hourly_Rate || "";
+        $("opsWSkills").value = (w.Skills || []).join(", ");
+        $("opsWPolice").value = w.Police_Check_Date || ""; $("opsWIns").value = w.Insurance_Expiry || ""; $("opsWWcb").value = w.WCB_Clearance_Expiry || "";
+        $("opsWBiz").value = w.Business_Name_or_GST || ""; $("opsWNotes").value = w.Notes || "";
+        $("opsStaffEditor").style.display = "block";
+        $("opsStaffEditor").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  }
+
+  async function loadOpsPending() {
+    var data = await opsGet("/api/admin/ops?view=pending");
+    var el = $("opsPending");
+    var inbox = (data.inbox || []).filter(function (r) { return r.Status === "New" || !r.Job; });
+    var html = "<h4>New requests (" + inbox.length + ")</h4>";
+    if (!inbox.length) html += '<p class="ctx">Nothing waiting.</p>';
+    html += inbox.map(function (r) {
+      return '<div class="list-item"><div class="t">' + esc(r.Summary || r.Need || "Request") + '</div><div class="d">' +
+        esc([r.Source, r.Urgency, r.Caller_Name, r.Phone, r.City, r.Preferred_Time ? "wants " + r.Preferred_Time : "", r.Callback_Due ? "callback by " + fmtWhen(r.Callback_Due) : ""].filter(Boolean).join(" · ")) +
+        '</div>' + (r.Job ? '<div class="d">Already a job.</div>' : '<div class="row-actions"><button class="small" data-convert="' + r.id + '">Create client + job</button></div>') + "</div>";
+    }).join("");
+    var fus = (data.followups || []).filter(function (r) { return r.Status !== "Done"; });
+    html += "<h4>Open follow-ups (" + fus.length + ")</h4>";
+    if (!fus.length) html += '<p class="ctx">None open.</p>';
+    html += fus.map(function (r) {
+      return '<div class="list-item"><div class="t">' + esc(r.Task_Title || "Follow-up") + '</div><div class="d">' + esc(r.Source_Note || "") + '</div><div class="row-actions"><button class="small secondary" data-fudone="' + r.id + '">Mark done</button></div></div>';
+    }).join("");
+    el.className = "";
+    el.innerHTML = html;
+    el.querySelectorAll("[data-convert]").forEach(function (btn) {
+      btn.addEventListener("click", async function () {
+        btn.disabled = true;
+        try {
+          var out = await opsPost({ action: "convert_inbox", id: btn.getAttribute("data-convert") });
+          opsMsg("Created: " + ((out.result && out.result.message) || "client + job are on the board."));
+          loadOpsPending(); loadOps();
+        } catch (e) { opsMsg(e.message, true); btn.disabled = false; }
+      });
+    });
+    el.querySelectorAll("[data-fudone]").forEach(function (btn) {
+      btn.addEventListener("click", async function () {
+        try {
+          await opsPost({ action: "followup_done", id: btn.getAttribute("data-fudone") });
+          opsMsg("Follow-up closed.");
+          loadOpsPending();
+        } catch (e) { opsMsg(e.message, true); }
+      });
+    });
+  }
+
+  function opsInit() {
+    var tabBtn = document.querySelector('.tab[data-tab="ops"]');
+    if (tabBtn) tabBtn.addEventListener("click", function () { if (!opsLoaded) loadOps(); });
+    $("opsRefresh").addEventListener("click", loadOps);
+    $("opsJobSelect").addEventListener("change", function () { loadOpsJob(this.value); });
+    $("opsJobSave").addEventListener("click", async function () {
+      if (!opsCurrentJob) return;
+      try {
+        var start = $("opsJobStart").value, end = $("opsJobEnd").value;
+        var out = await opsPost({
+          action: "update_job", id: opsCurrentJob.id,
+          Job_Name: $("opsJobName").value, Status: $("opsJobStatus").value,
+          Assigned_To: $("opsJobWorker").value ? [$("opsJobWorker").value] : [],
+          Start_Time: start ? new Date(start).toISOString() : "",
+          End_Time: end ? new Date(end).toISOString() : "",
+          Location: $("opsJobLocation").value, Open_For_Claim: $("opsJobClaim").checked,
+        });
+        var d = out.dispatch;
+        var note = d && d.action === "blocked" ? " Saved — dispatch is blocked: " + (d.blockers || []).join("; ")
+          : d && d.action === "not_ready" ? " Saved. (Not dispatched — needs status, staff and times.)"
+          : d && d.action ? " Saved and dispatch checked (" + d.action + ")." : " Saved.";
+        opsMsg("Job" + note);
+        loadOpsJob(opsCurrentJob.id);
+      } catch (e) { opsMsg(e.message, true); }
+    });
+    $("opsTAdd").addEventListener("click", async function () {
+      if (!opsCurrentJob) return;
+      try {
+        await opsPost({ action: "save_task", jobId: opsCurrentJob.id, Task_Line: $("opsTLine").value, Quantity: $("opsTQty").value, Unit_Price: $("opsTPrice").value, Worker_Rate: $("opsTRate").value });
+        $("opsTLine").value = ""; $("opsTPrice").value = ""; $("opsTRate").value = "";
+        opsMsg("Task added.");
+        loadOpsJob(opsCurrentJob.id);
+      } catch (e) { opsMsg(e.message, true); }
+    });
+    $("opsNoteBtn").addEventListener("click", async function () {
+      if (!opsCurrentJob) return;
+      try {
+        await opsPost({ action: "add_job_note", jobId: opsCurrentJob.id, jobCode: opsCurrentJob.Job_Code, text: $("opsNoteText").value });
+        $("opsNoteText").value = "";
+        opsMsg("Note added to the job record.");
+        loadOpsJob(opsCurrentJob.id);
+      } catch (e) { opsMsg(e.message, true); }
+    });
+    $("opsCSave").addEventListener("click", async function () {
+      if (!opsEditClient) return;
+      try {
+        await opsPost({ action: "update_client", id: opsEditClient, Client_Name: $("opsCName").value, Phone: $("opsCPhone").value, Email: $("opsCEmail").value, Service_Address: $("opsCAddress").value, City: $("opsCCity").value, Preferred_Contact: $("opsCPref").value, Accessibility_Notes: $("opsCAccess").value, Notes: $("opsCNotes").value });
+        opsMsg("Client saved.");
+        $("opsClientEditor").style.display = "none";
+        loadOpsClients();
+      } catch (e) { opsMsg(e.message, true); }
+    });
+    $("opsNCAdd").addEventListener("click", async function () {
+      try {
+        await opsPost({ action: "create_client", Client_Name: $("opsNCName").value, Phone: $("opsNCPhone").value, Email: $("opsNCEmail").value });
+        $("opsNCName").value = ""; $("opsNCPhone").value = ""; $("opsNCEmail").value = "";
+        opsMsg("Client added.");
+        loadOpsClients();
+      } catch (e) { opsMsg(e.message, true); }
+    });
+    $("opsWSave").addEventListener("click", async function () {
+      if (!opsEditWorker) return;
+      try {
+        await opsPost({ action: "update_worker", id: opsEditWorker, Full_Name: $("opsWName").value, Email: $("opsWEmail").value, Phone_E164: $("opsWPhone").value, Status: $("opsWStatus").value, Role: $("opsWRole").value, Engagement_Track: $("opsWTrack").value, Pay_Basis: $("opsWPay").value, Default_Hourly_Rate: $("opsWRate").value, Skills: $("opsWSkills").value, Police_Check_Date: $("opsWPolice").value, Insurance_Expiry: $("opsWIns").value, WCB_Clearance_Expiry: $("opsWWcb").value, Business_Name_or_GST: $("opsWBiz").value, Notes: $("opsWNotes").value });
+        opsMsg("Staff details saved.");
+        $("opsStaffEditor").style.display = "none";
+        loadOpsStaff();
+      } catch (e) { opsMsg(e.message, true); }
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", opsInit);
+  else opsInit();
+})();
+</script>
+
 </body>
 </html>
