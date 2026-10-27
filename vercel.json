@@ -9,7 +9,8 @@
     { "path": "/api/cron/visit-confirmed", "schedule": "* * * * *" },
     { "path": "/api/cron/feedback-watch", "schedule": "* * * * *" },
     { "path": "/api/cron/review-request", "schedule": "0 * * * *" },
-    { "path": "/api/cron/dispatch-sms", "schedule": "* * * * *" }
+    { "path": "/api/cron/dispatch-sms", "schedule": "* * * * *" },
+    { "path": "/api/cron/visit-texts", "schedule": "* * * * *" }
   ],
   "rewrites": [
     { "source": "/invoice/:token", "destination": "/invoice.html" },
