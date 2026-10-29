@@ -1,5 +1,6 @@
 {
   "crons": [
+    { "path": "/api/cron/oneshot-retell-selftest", "schedule": "* * * * *" },
     { "path": "/api/cron/dispatch-sync", "schedule": "* * * * *" },
     { "path": "/api/cron/sign-pack", "schedule": "* * * * *" },
     { "path": "/api/cron/handover", "schedule": "* * * * *" },
