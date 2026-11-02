@@ -41,7 +41,7 @@ const DNC_TABLE = "Do_Not_Call";
 const OWNER_MOBILE = "+18259626061";
 const OWNER_EMAIL = "wilton@wilglobo.com";
 const BOOKING_LINK =
-  "https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0T0pEaBkmhSA8V2SoQxDkoD5UZuZRWhsxSukGDOEaV4jpQ5ptplsBheejNfEix6SfpMV1cUZOI";
+  "https://scheduler.zoom.us/wilglobo-inc-a19d1d/wilglobo-consultation";
 
 const ALERT_OUTCOMES = new Set([
   "booked_link",
@@ -297,9 +297,9 @@ function prospectSmsBody(rec) {
           `Hi ${name}, WilGlobo here — Wilton will call you back at the agreed time. Or book a slot: ${BOOKING_LINK}`,
         ]
       : [
-          `Hi ${name}, WilGlobo here — thanks for the chat. Here's the booking link for the free 20-min call with Wilton: ${BOOKING_LINK} — pick any time that suits.`,
-          `Hi ${name}, WilGlobo here — thanks for the chat. Here's the booking link for the free 20-min call with Wilton: ${BOOKING_LINK}`,
-          `Hi ${name}, WilGlobo here — your booking link for the free 20-min call with Wilton: ${BOOKING_LINK}`,
+          `Hi ${name}, WilGlobo here — thanks for the chat. Here's the booking link for the free 30-min call with Wilton: ${BOOKING_LINK} — pick any time that suits.`,
+          `Hi ${name}, WilGlobo here — thanks for the chat. Here's the booking link for the free 30-min call with Wilton: ${BOOKING_LINK}`,
+          `Hi ${name}, WilGlobo here — your booking link for the free 30-min call with Wilton: ${BOOKING_LINK}`,
         ];
   for (const core of variants) {
     if ((core + stop).length <= 320) return core + stop;
