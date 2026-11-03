@@ -292,14 +292,14 @@ function prospectSmsBody(rec) {
   const variants =
     rec.outcome === "booked_callback"
       ? [
-          `Hi ${name}, WilGlobo here — confirming Wilton will call you back ${rec.preferredWindow || "at the time you picked"} at this number. If you'd rather grab a slot yourself: ${BOOKING_LINK}`,
-          `Hi ${name}, WilGlobo here — confirming Wilton will call you back at the agreed time. If you'd rather grab a slot yourself: ${BOOKING_LINK}`,
-          `Hi ${name}, WilGlobo here — Wilton will call you back at the agreed time. Or book a slot: ${BOOKING_LINK}`,
+          `Hi ${name}, WilGlobo here — confirming our Tech Team will call you back ${rec.preferredWindow || "at the time you picked"} at this number. If you'd rather grab a slot yourself: ${BOOKING_LINK}`,
+          `Hi ${name}, WilGlobo here — confirming our Tech Team will call you back at the agreed time. If you'd rather grab a slot yourself: ${BOOKING_LINK}`,
+          `Hi ${name}, WilGlobo here — Our Tech Team will call you back at the agreed time. Or book a slot: ${BOOKING_LINK}`,
         ]
       : [
-          `Hi ${name}, WilGlobo here — thanks for the chat. Here's the booking link for the free 30-min call with Wilton: ${BOOKING_LINK} — pick any time that suits.`,
-          `Hi ${name}, WilGlobo here — thanks for the chat. Here's the booking link for the free 30-min call with Wilton: ${BOOKING_LINK}`,
-          `Hi ${name}, WilGlobo here — your booking link for the free 30-min call with Wilton: ${BOOKING_LINK}`,
+          `Hi ${name}, WilGlobo here — thanks for the chat. Here's the booking link for the free 30-min call with our Tech Team: ${BOOKING_LINK} — pick any time that suits.`,
+          `Hi ${name}, WilGlobo here — thanks for the chat. Here's the booking link for the free 30-min call with our Tech Team: ${BOOKING_LINK}`,
+          `Hi ${name}, WilGlobo here — your booking link for the free 30-min call with our Tech Team: ${BOOKING_LINK}`,
         ];
   for (const core of variants) {
     if ((core + stop).length <= 320) return core + stop;
