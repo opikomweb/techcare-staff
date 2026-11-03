@@ -5,7 +5,7 @@
    Videos: every URL below was opened and verified (title, channel,
    duration) before being listed — see `verified` dates in README.md. */
 window.TC_TRAINING = {
-  intro: "Ten short lessons for everyday tech. Teach one module at a time, let the client do the clicking, and leave the printed handout behind.",
+  intro: "Twelve short lessons for everyday tech — including two on internet and phone plans: what a fair price looks like, and how to switch safely. Teach one module at a time, let the client do the clicking, and leave the printed handout behind.",
   modules: [
     {
       n: 1, slug: "computer-basics", icon: "🖥️", title: "Computer basics",
@@ -33,6 +33,7 @@ window.TC_TRAINING = {
         stopWhen: "Stop and reassure if the client gets flustered — two or three new ideas per visit is plenty. If the machine itself is misbehaving (very slow, strange pop-ups), switch to troubleshooting and flag it on the job notes."
       },
       panel: { kind: "computer" },
+      panels: ["computer", "mouse", "keyboard"],
       handout: {
         intro: "Your computer is hard to break. Clicking something by mistake is fine — you can always close it and start again. Go slowly. Nothing is in a hurry.",
         steps: [
@@ -91,6 +92,7 @@ window.TC_TRAINING = {
         stopWhen: "If you find messages the client can't identify asking for money, passwords, or gift cards, stop teaching and switch to Module 4 (scams) — flag it on the job notes."
       },
       panel: { kind: "inbox" },
+      panels: ["inbox", "compose"],
       handout: {
         intro: "Email is just mail that arrives in seconds. These steps work in Gmail, Outlook, and most other email programs — the buttons may sit in slightly different spots, but the names are the same.",
         steps: [
@@ -529,7 +531,9 @@ window.TC_TRAINING = {
           "Address vs search confusion — typing full questions into the address bar is fine in modern browsers; reassure, don't correct harshly",
           "Look-alike addresses in texts/emails (rbc-secure-login.xyz) — tie back to Module 4: never arrive at banking via a link",
           "Browser warning pages ('Your connection is not private') — teach STOP, don't teach the 'proceed anyway' button",
-          "Dozens of stale tabs and pop-up tabs from ads — show Close All and the X on tabs; install nothing offered by a web page"
+          "Dozens of stale tabs and pop-up tabs from ads — show Close All and the X on tabs; install nothing offered by a web page",
+          "Router tucked in a basement corner or behind the TV — Wi-Fi is radio; a central, raised spot fixes more \u201cslow internet\u201d complaints than any plan upgrade",
+          "If nothing connects, do the restart together once: unplug the router, count to 30, plug it back in, and wait a full 2 minutes — then judge the lights together (router picture guide)"
         ],
         teachBack: [
           "“Show me if you're on Wi-Fi right now, and which network is yours.”",
@@ -539,10 +543,12 @@ window.TC_TRAINING = {
         stopWhen: "If the home Wi-Fi itself is broken (router lights wrong, no device connects), that's an infrastructure fix, not a lesson — log it and, if the ISP is the issue, offer the 'we call them together' service."
       },
       panel: { kind: "urlcheck" },
+      panels: ["urlcheck", "router", "wifidata"],
       handout: {
         intro: "The internet reaches your home through Wi-Fi — invisible radio from a little router box. Your browser (Safari, Chrome, or Edge) is the car you drive on it. Here's how to drive safely.",
         steps: [
           { h: "Check your Wi-Fi", p: "Look for the fan-shaped Wi-Fi symbol at the top of the screen. No symbol (or an X) means no connection. To reconnect: open Settings → Wi-Fi → tap YOUR home network's name. The password is often on a sticker on the router." },
+          { h: "If the internet stops: the 2-minute router restart", p: "Find the little internet box (the router — see the picture guide). Unplug its power, count slowly to 30, plug it back in, and wait a full 2 minutes while the lights return. The Internet light should settle to a steady colour. Still red or off after 5 minutes? The problem is your provider's — call them, or call us and we will help you call them." },
           { h: "Open the browser and go somewhere", p: "Tap Safari, Chrome, or Edge. Tap the address bar at the top, type where you want to go — like cbc.ca — and tap Go/Enter. The page loads in a few seconds." },
           { h: "Searching instead", p: "Don't know the address? Type plain words in the same bar — “Calgary weather tomorrow” — and tap Go. Results appear as a list; the top results are often ads (labelled “Ad” or “Sponsored”). Scroll past them to the real results." },
           { h: "Read a web address like a street sign", p: "The real owner's name sits right before .ca or .com. yourbank.ca is the bank. yourbank-secure-login.xyz is NOT — it's a stranger renting a similar sign. Check spelling letter by letter; scammers swap one letter." },
@@ -570,6 +576,114 @@ window.TC_TRAINING = {
                       "url": "https://www.youtube.com/watch?v=2ZZQlgV2Gus"
               }
       ]
+    },
+    {
+      n: 11, slug: "fair-price-plans", icon: "🧾", title: "Internet & phone plans: getting a fair price",
+      tagline: "Read the bill, right-size the speed, and ask for the seniors' programs by name.",
+      minutes: "20–30 minutes of a visit (bring the bills)",
+      coach: {
+        goals: [
+          "Client can read their bill line by line and point at anything they don't use",
+          "Client knows the END DATE of every discount on their bill — and what the price becomes after",
+          "Client can match their life to the speed ladder (most senior homes: 25–75 Mbps is plenty)",
+          "Client can name the seniors' programs: Telus Internet for Good, Rogers Connected for Success, Connecting Families",
+          "Client knows the five questions to ask before signing anything"
+        ],
+        say: "Frame the bill as a grocery receipt: “Every line is something in your cart. Some of it you use every day. Some of it was put in your cart years ago — a TV package nobody watches, a rental box, a speed tier built for a family of gamers. Today we just read the receipt together and take out what you don't use.” For speed: “Speed is like lanes on a highway. One car doesn't need eight lanes.”",
+        watchFor: [
+          "Quoting prices from memory or from other provinces — Alberta prices differ; the figures in this module were checked Nov 2026 and still need a live check at the client's address before anyone signs",
+          "The '50 GB for $25' Rogers Connected for Success mobile claim in some web guides — Rogers's own flyer says 10 GB for $25. Do not repeat the 50 GB figure to a client",
+          "Promo prices that assume Auto-Pay is on, and prices that jump at month 25 — always teach the REGULAR price as the real price",
+          "Small monthly add-ons that quietly grow bills: Wi-Fi pod / Wi-Fi Plus rentals (~$10/mo), extra TV packs, protection plans",
+          "Eligibility paperwork: the Telus seniors' programs ask for the T4A(OAS) slip, box 21 (GIS of at least $6,500/yr) — help the client find it rather than guessing whether they qualify"
+        ],
+        teachBack: [
+          "“Show me on your bill: where is the discount, and when does it end?”",
+          "“Which speed on the ladder sounds like your house?”",
+          "“Which program name would you ask for on the phone?” (Internet for Good / Connected for Success)"
+        ],
+        stopWhen: "If the client is mid-contract with a large early-exit amount, or has an active billing dispute, do not advise switching on the spot — switch to Module 12, document the numbers, and book the follow-up so the call to the provider happens with support. Never promise a specific saving."
+      },
+      panel: { kind: "bill" },
+      panels: ["bill", "speed"],
+      handout: {
+        intro: "Internet and phone bills grow quietly — a discount ends, a rental sneaks in, a package nobody watches stays for years. This sheet shows you how to read your bill and where the fair prices for seniors are hiding. (Prices checked November 2026 — they change, so we confirm the exact price before you sign anything.)",
+        steps: [
+          { h: "Bring your last two bills", p: "Paper copies, or open them in the provider's app with us. Two bills matter: a discount ending shows up as a jump between them." },
+          { h: "Find your real price", p: "Look at the TOTAL after tax — that's your real price. Now find every line that says 'discount' or 'promo' and circle its END DATE. When a discount ends, the bill jumps by itself. That date is your reminder to call and renegotiate — or to switch (next module)." },
+          { h: "Check your speed against the ladder", p: "See the speed picture above. Email and news need almost nothing; a video call needs about 10; a movie in HD about 25. Most one- or two-person homes are happy at 25–75 Mbps. If you're paying for 500 or 1,000 Mbps, you're paying for lanes you never drive in." },
+          { h: "Ask for the seniors' programs — by name", p: "If you receive the Guaranteed Income Supplement (GIS), ask about: Telus Internet for Good (internet from $10/month) and Telus Mobility for Good — Seniors (phone, $25/month for 10 GB). Rogers Connected for Success (internet from $9.99/month; phone $25/month) works on the old Shaw network here in Calgary. There's also a federal program, Connecting Families ($10 or $20/month) — it arrives as a letter from the Government of Canada with a code. If that letter ever comes, don't throw it out — bring it to us." },
+          { h: "Compare one budget option", p: "Smaller companies rent the same wires and are often cheaper: for example, oxio internet at $49/month for 75 Mbps with no contract; Public Mobile phone plans around $22–$28/month; Freedom Mobile has yearly prepaid plans ($99–$159 for a whole year). We check what's available at YOUR address — coverage differs street by street." },
+          { h: "Five questions before you sign anything", p: "1) What is the price AFTER the promotion ends? 2) Is there a contract, and what does leaving early cost? 3) Is the box (modem) included or rented? 4) Does the price need Auto-Pay? 5) Can I see that in writing? A good offer survives all five questions." }
+        ],
+        tips: [
+          "Have a disability or accessibility need? Ask for the provider's ACCESSIBILITY team — Rogers, for example, offers $20/month off plus extra data. Front-line sales staff often don't know these exist.",
+          "A bundle is only a deal if you use everything in it. Internet-only plus a cheap phone plan often beats the big bundle.",
+          "Never sign at the door or under time pressure. 'This price is only today' is a sales tactic, not a fact — the seniors' programs don't expire overnight."
+        ],
+        remember: "Circle the end dates, match the speed to your life, and ask for the seniors' programs by name."
+      },
+      videos: [],
+      sources: [
+        "Program terms: Telus Internet for Good & Mobility for Good — Seniors (telus.com) and Rogers Connected for Success (program flyer) — checked Nov 3, 2026",
+        "Connecting Families Initiative: Innovation, Science and Economic Development Canada — running to Mar 31, 2027; invitation letter required",
+        "Alberta prices: PlanHub / CompareZone Calgary checks, Nov 1–2, 2026 (Telus PureFibre 500 promo ≈ $80–90, regular $125; Rogers 500 Mbps promo $90, regular $130; oxio 75 Mbps $49; Public Mobile & Freedom plan cards, Nov 2026)",
+        "Re-check live prices at the client's address before quoting — prices and promos change monthly"
+      ]
+    },
+    {
+      n: 12, slug: "switching-providers", icon: "🔁", title: "Switching providers, safely & legally",
+      tagline: "Keep your number, skip the penalties, and know the free complaints office.",
+      minutes: "15–20 minutes of a visit",
+      coach: {
+        goals: [
+          "Client knows the golden rule: sign up with the NEW provider first; never cancel the old service before the switch",
+          "Client knows their number moves with them, free, and the old account closes itself",
+          "Client knows the trial periods (15 days; 30 with a disability) and the 45-day 'contract doesn't match the offer' rule",
+          "Client knows what leaving can legally cost: at most the unpaid balance of a subsidized phone — and since June 2026, no early cancellation fee at all on a phone plan with no subsidized phone; fixed-term INTERNET contracts can still carry the fee written in the contract, shrinking to $0 by the end of the term",
+          "Client knows the complaint ladder: provider first (names + dates), then the free CCTS"
+        ],
+        say: "Use the moving-house picture: “Switching providers is like moving house but keeping your phone number as your address. The new company does the heavy lifting — they book the truck, move the number, and the old house closes itself. Your only job is to be ready on moving day, and to hand back the old keys (the box) and keep the receipt.”",
+        watchFor: [
+          "The client (or a salesperson) cancelling the old service first — a cancelled number can be lost for good",
+          "Verbal promises that differ from the Critical Information Summary — the one-page summary is what counts; keep it",
+          "Returning equipment without proof — always get a receipt or keep the mailing tracking number; 'unreturned box' charges are a classic",
+          "Door-to-door and phone pressure to switch on the spot — legitimate offers survive a night's sleep and a look at Module 11",
+          "Assuming the big carriers set the rules — the rules are Canada's (CRTC Codes). If a rep contradicts the rights panel, write down their name and what they said"
+        ],
+        teachBack: [
+          "“If you wanted to switch next month, what's the very first thing you'd do?” (choose the new plan / call the new provider — NOT cancel)",
+          "“The new internet is in and it's worse. What protects you, and for how long?” (trial period)",
+          "“You called the company twice about a wrong bill and nothing changed. Who's the free next step?” (CCTS)"
+        ],
+        stopWhen: "If there's an active dispute, a collections notice, or a large early-exit amount in play, stop and document: dates, names, amounts, and what was promised. Book the follow-up so the provider call or CCTS filing happens with support — and never promise the client a refund outcome; that's the CCTS's call."
+      },
+      panel: { kind: "switchsteps" },
+      panels: ["switchsteps", "rights"],
+      handout: {
+        intro: "Changing internet or phone companies is safer than most people think — Canadian rules are on your side. The whole trick is the ORDER: new company first, old company second. This sheet walks it in the right order.",
+        steps: [
+          { h: "Check your current contract", p: "Find three things (we can read it together): When does the term end? Is there a fee for leaving early? If you got a phone with the plan, what's left owing on it? Since June 2026 there are NO activation fees on new plans, and a phone plan with no subsidized phone has NO early cancellation fee at all. Internet contracts on a fixed term can still charge the fee written in the contract — it shrinks every month and must reach $0 by the end of the term." },
+          { h: "Choose the new plan — first", p: "Use the fair-price module: right-size the speed, ask about the seniors' programs, and ask the five questions. Get the offer in writing (the one-page Critical Information Summary). If the service later doesn't match that summary, you can cancel within 45 days without fees." },
+          { h: "Sign up with the NEW company — and say 'move my number'", p: "The new company moves your phone number for you, free. Do NOT cancel the old service yourself: when the number moves, the old account closes on its own. Cancelling first can lose your number forever. The switch usually takes a few hours for a phone; internet is booked as an install or a plug-in date." },
+          { h: "Test it during your trial", p: "You have a trial period — 15 days, or 30 days if you have a disability — to change your mind and cancel without cancellation fees (return the equipment in good shape). Make the calls, watch the TV, test the far bedroom's Wi-Fi during those days, not after." },
+          { h: "Return the old equipment — and keep proof", p: "Boxes (modems, TV boxes) usually must go back. Get a receipt at the counter or keep the shipping tracking number until a bill cycle passes with no 'unreturned equipment' charge." },
+          { h: "If a bill is wrong: provider first, then the free CCTS", p: "Call the company and write down the date, the person's name, and what they promised. Still not fixed? The CCTS — the Commission for Complaints for Telecom-television Services — is an independent office that handles exactly this, and it's free: ccts-cprst.ca or 1-888-221-1687. File within a year. They can order corrections and refunds of up to $5,000." }
+        ],
+        tips: [
+          "Mid-contract protection: during a fixed term, the company can't change your key terms — including your minimum monthly price — without your informed agreement. After the term, price changes need at least 60 days' notice.",
+          "Companies must now warn you at least 90 days before a fixed term ends — watch for that letter or email; it's your penalty-free moment to renegotiate or switch.",
+          "Your phone is unlocked by law (since 2017), so it works with any company. If an old phone is still locked, the company must unlock it free."
+        ],
+        remember: "New company first, your number moves with you, and the old service closes itself."
+      },
+      videos: [],
+      sources: [
+        "CRTC Internet Code (plain-language version) — trial periods, 45-day mismatch rule, equipment & cancellation rules (crtc.gc.ca, checked Nov 3, 2026)",
+        "CRTC Wireless Code — device balance rule, unlocking, number porting; CRTC Policies 2026-43 (fee bans in force Jun 12, 2026) and 2026-67 (90-day end-of-term notice)",
+        "CCTS — Commission for Complaints for Telecom-television Services: ccts-cprst.ca, 1-888-221-1687 (free; file within 1 year)"
+      ]
     }
+
   ]
 };
