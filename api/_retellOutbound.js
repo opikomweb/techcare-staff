@@ -41,7 +41,7 @@ const DNC_TABLE = "Do_Not_Call";
 const OWNER_MOBILE = "+18259626061";
 const OWNER_EMAIL = "wilton@wilglobo.com";
 const BOOKING_LINK =
-  "https://scheduler.zoom.us/wilglobo-inc-a19d1d/wilglobo-consultation";
+  "https://cal.com/wilglobo/consultation";
 
 const ALERT_OUTCOMES = new Set([
   "booked_link",
