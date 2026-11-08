@@ -87,13 +87,13 @@ module.exports = async (req, res) => {
     try {
       guard = await guardState();
     } catch (e) {
-      return res.status(500).json({ ok: false, error: "guard_check_failed_no_send" });
+      return res.status(500).json({ ok: false, error: "guard_check_failed_no_send", detail: String(e && e.message ? e.message : e) });
     }
     if (guard === "found") return res.status(200).json({ ok: true, already: true, marker: MARKER_ID });
     try {
       await writeMarker({ started_at: new Date().toISOString() });
     } catch (e) {
-      return res.status(500).json({ ok: false, error: "marker_write_failed_no_send" });
+      return res.status(500).json({ ok: false, error: "marker_write_failed_no_send", detail: String(e && e.message ? e.message : e), code: e && e.code ? e.code : undefined });
     }
 
     const out = { ok: true, marker: MARKER_ID, steps: {} };
