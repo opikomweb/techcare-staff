@@ -1,66 +1,74 @@
-// DIAGNOSTIC PROBE (Nov 8, 2026) — temporary. Determines which
-// staff.audit_log insert shape the production RLS policies accept,
-// so the Review Engine's audit store can be repaired precisely.
-// Writes only harmless 'review.dogfood_probe' audit rows. NO sends,
-// NO config, NO engine actions. Deleted once the repair lands.
-const { getStaffPool, withStaffAuth } = require("../_staffAuth");
+// TEMPORARY one-shot (Nov 8, 2026) — Review Engine dogfood runner.
+// Executes, in-process through the production engine: (phase=config)
+// the client-zero TechCare config upsert + read-back + a dry-run
+// wording proof; (phase=selftest) one real ask to the owner's own
+// cell; (phase=dogfood) the two approved dogfood asks ONLY — Diane
+// (WGB-4) and Lorese Morgan (WGB-9). Token-gated. Deleted in the
+// cleanup commit immediately after the run completes.
+const engine = require("../_reviewEngine");
 
-const OWNER_EMAIL = "wilton@wilglobo.com";
-const ACTION = "review.dogfood_probe";
+const TOKEN = "f8ced648eacb184d13878d6088406b6d";
 
-async function tryInsert(label, run) {
-  try {
-    await run();
-    return { label, ok: true };
-  } catch (e) {
-    return { label, ok: false, code: e && e.code, detail: String(e && e.message ? e.message : e) };
-  }
-}
+const CONFIG = {
+  client_key: "techcare",
+  business_name: "TechCare by WilGlobo",
+  review_link: "https://g.page/r/CZ8G2uJ0q4R6EBM/review",
+  owner_name: "Wilton",
+  owner_mobile: "+18259626061",
+  owner_email: "wilton@wilglobo.com",
+  from_number: "",
+  timezone: "America/Edmonton",
+  services: ["computer help at home", "email and account setup", "phone and tablet help", "scam-safety check"],
+  city: "Calgary",
+  review_highlight: true,
+  active: true,
+};
+
+const SELFTEST = { client_key: "techcare", job_ref: "SELFTEST-20261108", customer_name: "Wilton", customer_mobile: "+18259626061" };
+const DOGFOOD = [
+  { client_key: "techcare", job_ref: "WGB-4", customer_name: "Diane", customer_mobile: "+14034003731" },
+  { client_key: "techcare", job_ref: "WGB-9", customer_name: "Lorese Morgan", customer_mobile: "+14033835046" },
+];
 
 module.exports = async (req, res) => {
-  if (req.method !== "GET" && req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed." });
-  }
-  const out = { probe: true, steps: {} };
+  const q = req.query || {};
+  if (q.t !== TOKEN) return res.status(404).json({ error: "not found" });
+  const phase = String(q.phase || "");
   try {
-    const db = getStaffPool();
-    // 1) Owner's staff.people row (plain read).
-    try {
-      const { rows } = await db.query(
-        `select id, auth_user_id, email, is_core_staff, active from staff.people where lower(email) = lower($1) limit 1`,
-        [OWNER_EMAIL]
-      );
-      out.steps.people = rows.length ? { found: true, id: rows[0].id, has_auth_uid: Boolean(rows[0].auth_user_id), is_core_staff: rows[0].is_core_staff, active: rows[0].active } : { found: false };
-      out._person = rows[0] || null;
-    } catch (e) {
-      out.steps.people = { found: false, error: String(e && e.message ? e.message : e), code: e && e.code };
-      out._person = null;
+    if (phase === "config") {
+      const up = await engine.upsertConfig(CONFIG);
+      const back = await engine.getConfigByKey("techcare");
+      let dry = null;
+      if (back) {
+        const d = await engine.handleJobCompleted(
+          { client_key: "techcare", job_ref: "DRYRUN-WORDING", customer_name: "Wilton", customer_mobile: "+18259626061" },
+          { dryRun: true }
+        );
+        dry = d && d.steps ? d.steps.ask : d;
+      }
+      return res.status(200).json({
+        ok: true, phase,
+        upsert: { ok: up.ok, stored: up.stored || null, error: up.error || null },
+        readback: back,
+        dry_run: dry,
+      });
     }
-    const person = out._person;
-    delete out._person;
-    if (!person) return res.status(200).json({ ...out, ok: false, aborted: "no_owner_person_row" });
-
-    const detail = JSON.stringify({ probe: "2026-11-08" });
-    const insertSql = `insert into staff.audit_log (actor_person_id, actor_email, action, entity_type, entity_id, detail) values ($1, $2, $3, 'review_engine', $4, $5)`;
-
-    // A) plain pool, real actor_person_id, owner actor_email.
-    out.steps.variantA = await tryInsert("plain_actor_id", () =>
-      db.query(insertSql, [person.id, OWNER_EMAIL, ACTION, "probe-a", detail]));
-
-    // B) claims transaction (withStaffAuth), real actor_person_id.
-    out.steps.variantB = person.auth_user_id
-      ? await tryInsert("claims_actor_id", () =>
-          withStaffAuth(person.auth_user_id, (client) => client.query(insertSql, [person.id, OWNER_EMAIL, ACTION, "probe-b", detail])))
-      : { label: "claims_actor_id", ok: false, skipped: "no_auth_uid" };
-
-    // C) claims transaction, NULL actor (the engine's current shape, but with claims).
-    out.steps.variantC = person.auth_user_id
-      ? await tryInsert("claims_null_actor", () =>
-          withStaffAuth(person.auth_user_id, (client) => client.query(insertSql, [null, "reviews@wilglobo.com", ACTION, "probe-c", detail])))
-      : { label: "claims_null_actor", ok: false, skipped: "no_auth_uid" };
-
-    return res.status(200).json({ ...out, ok: true });
+    if (phase === "selftest") {
+      const out = await engine.handleJobCompleted(SELFTEST, {});
+      const ask = await engine.getAsk("techcare:SELFTEST-20261108");
+      return res.status(200).json({ ok: true, phase, result: out, ask_row: ask });
+    }
+    if (phase === "dogfood") {
+      const results = [];
+      for (const job of DOGFOOD) {
+        const out = await engine.handleJobCompleted(job, {});
+        results.push({ job_ref: job.job_ref, result: out });
+      }
+      const asks = await engine.listAsks("techcare", 50);
+      return res.status(200).json({ ok: true, phase, results, asks });
+    }
+    return res.status(400).json({ ok: false, error: "specify phase=config|selftest|dogfood" });
   } catch (e) {
-    return res.status(500).json({ ...out, ok: false, error: "probe_failed", detail: String(e && e.message ? e.message : e) });
+    return res.status(500).json({ ok: false, phase, error: String(e && e.message ? e.message : e) });
   }
 };
