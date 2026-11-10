@@ -23,7 +23,7 @@ const first = (v) => (Array.isArray(v) ? v[0] || "" : v || "");
 const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
 function reviewEmailHtml(clientName, jobCode, reviewLink) {
-  return '<div style="font-family:Arial,sans-serif;max-width:480px"><h2 style="color:#0b1e33;margin:0 0 4px">TechCare by WilGlobo</h2><p style="color:#66717d;margin:0 0 20px">Hi ' + esc(clientName) + ", thanks for choosing us for " + esc(jobCode) + '.</p><p style="font-size:16px;margin:0 0 20px">If we did a good job, a quick review helps other people in Calgary find us. It only takes a minute.</p><p><a href="' + esc(reviewLink) + '" style="background:#0b6fd6;color:#ffffff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Leave us a review</a></p><p style="color:#888;font-size:12px;margin-top:28px">WilGlobo TechCare - tech@wilglobo.com - (403) 679-3039</p></div>';
+  return '<div style="font-family:Arial,sans-serif;max-width:480px"><h2 style="color:#0b1e33;margin:0 0 4px">TechCare by WilGlobo</h2><p style="color:#66717d;margin:0 0 20px">Hi ' + esc(clientName) + ", thanks for choosing us for " + esc(jobCode) + '.</p><p style="font-size:16px;margin:0 0 20px">How did we do? Good or bad, a quick review helps us get better and helps other people in Calgary find us. It only takes a minute.</p><p><a href="' + esc(reviewLink) + '" style="background:#0b6fd6;color:#ffffff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Leave us a review</a></p><p style="color:#888;font-size:12px;margin-top:28px">WilGlobo TechCare - tech@wilglobo.com - (403) 679-3039</p></div>';
 }
 
 async function runReviewRequests() {
