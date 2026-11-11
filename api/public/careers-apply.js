@@ -10,6 +10,7 @@
 // the record is saved before the alert is sent; a failure in either
 // surfaces as an error rather than the success response.
 const { buildCareersAlert } = require("../_careersAlert");
+const { assessCareersSubmission } = require("../_careersGate");
 
 const BASE_ID = "appBiAKY6ivoImcaQ";
 const APPLICANTS_TABLE = "tblyZYIfRs3GTHwsq";
@@ -30,6 +31,14 @@ module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Method not allowed." });
   try {
     const b = req.body || {};
+    const gate = assessCareersSubmission(b);
+    if (gate.drop) {
+      // Spam/phishing gate (Nov 10, 2026): return the exact success
+      // response so the submitter learns nothing; save nothing,
+      // send nothing. Reasons go to the server log only.
+      console.log("careers-apply dropped submission:", gate.reasons.join(", "));
+      return res.status(200).json({ ok: true, message: "Thanks! We'll be in touch soon." });
+    }
     const writeKey = process.env.AIRTABLE_WRITE_KEY || process.env.AIRTABLE_API_KEY;
     if (!writeKey) throw new Error("Airtable key not configured.");
     const create = await fetch(`https://api.airtable.com/v0/${BASE_ID}/${APPLICANTS_TABLE}`, {
@@ -61,13 +70,19 @@ module.exports = async (req, res) => {
       throw new Error(`Airtable create ${create.status}: ${(data.error && data.error.message) || ""}`);
     }
     const { alertHtml, alertSubject } = buildCareersAlert(b);
+    // Belt-and-braces (Nov 10, 2026): the audited alert builder is
+    // kept verbatim, so strip any URL out of the subject here — a
+    // subject must never carry a live link into Wilton's inbox.
+    const safeSubject =
+      alertSubject.replace(/https?:\/\/\S+/gi, "").replace(/www\.\S+/gi, "").replace(/\s{2,}/g, " ").trim() ||
+      "New TechCare worker interest";
     const send = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: "TechCare by WilGlobo <tech@wilglobo.com>",
         to: [WILTON],
-        subject: alertSubject,
+        subject: safeSubject,
         html: alertHtml,
       }),
     });
